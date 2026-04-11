@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Allergy Knight: Mega Edition - Sistema de Kills para Upgrades</title>
+    <title>Allergy Knight: Mega Edition - Boss Aleatório Corrigido</title>
     <style>
         body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Courier New', Courier, monospace; cursor: crosshair; }
         canvas { border: 5px solid #444; background: #1a1a1a; display: block; box-shadow: 0 0 30px rgba(0,255,255,0.2); }
@@ -120,7 +120,6 @@
         let roomCount = 1; 
         let specialUsageCount = 0; 
         
-        // NOVO: Sistema de kills para upgrades
         let totalKills = 0;
         let killsNeededForNextUpgrade = 10;
         let upgradeKillsBase = 10;
@@ -148,11 +147,10 @@
 
         const playerUpgrades = { filter: 200, battery: 180, water: false, mask: 3 };
         
-        // NERF: Velocidade reduzida de 3.8 para 3.0
         const player = { 
             x: 400, y: 300, size: 28, speed: 3.0, hp: 6, maxHp: 6, 
             vx: 0, vy: 0, invincible: false, lastShot: 0, 
-            shotDelay: 250, // NERF: Aumentado de 150 para 250 (tiros mais lentos)
+            shotDelay: 250,
             isVacuuming: false, isMoving: false, walkCycle: 0,
             vacuumCharge: 0,
             maxVacuumCharge: 100
@@ -170,7 +168,6 @@
 
         for(let i=0; i<40; i++) ambientDust.push({x: Math.random()*800, y: Math.random()*600, s: Math.random()*2+1, o: Math.random()});
 
-        // NOVO: Função para verificar e abrir menu de upgrade baseado em kills
         function checkUpgradeByKills() {
             if(totalKills >= killsNeededForNextUpgrade && !isUpgrading && !bossDefeated && !isGameOver) {
                 killsNeededForNextUpgrade += upgradeKillsBase + Math.floor(totalKills / 20);
@@ -325,13 +322,15 @@
                 'esporo': { color: "#81c784", size: 25, speed: 2.8, hp: 30, explode: true, flyer: false, spawner: false, mimic: false },
                 'polen': { color: "#FFD700", size: 22, speed: 3.5, hp: 35, flyer: true, flyHeight: 0, flySpeed: 0.05, flyerOffset: 0 },
                 'mofo': { color: "#8B4513", size: 40, speed: 0, hp: 60, spawner: true, spawnTimer: 0, spawnDelay: 300 },
-                'mimic': { color: "#ff4444", size: 28, speed: 4, hp: 50, mimic: true, revealed: false }
+                'mimic': { color: "#ff4444", size: 28, speed: 4, hp: 50, mimic: true, revealed: false },
+                'boss': { color: "#4a148c", size: 130, speed: 3.0, hp: 3000, isBoss: true, flyer: false, spawner: false, mimic: false }
             };
             const t = types[type];
             let extraProps = {};
             if(type === 'polen') extraProps = { flyHeight: 0, flyerOffset: Math.random() * Math.PI * 2 };
             if(type === 'mofo') extraProps = { spawnTimer: 0, spawnDelay: 300 };
             if(type === 'mimic') extraProps = { revealed: false };
+            if(type === 'boss') extraProps = { isBoss: true, state: 'idle', stateTimer: 0 };
             
             enemies.push({ ...t, ...extraProps, type, x, y, vx: 0, vy: 0, state: 'idle', stateTimer: 0, flash: 0, slow: 0 });
         }
@@ -357,14 +356,15 @@
             
             const isBossRoom = roomData.isBossRoom;
             
-            if (isBossRoom && !clearedRooms.has(posKey) && !bossDefeated) {
+            // SPAWN DO BOSS - Versão corrigida
+            if (isBossRoom && !bossDefeated && !clearedRooms.has(posKey)) {
+                console.log("🔴 É SALA DO BOSS! Spawnando o Lorde Ácaro...");
                 spawnEnemy(canvas.width/2 - 65, canvas.height/2 - 65, 'boss');
                 document.getElementById('room-info').style.color = "#ff4444";
                 document.getElementById('room-info').style.textShadow = "0 0 10px red";
                 createParticles(canvas.width/2, canvas.height/2, "#ff0000", 50, 10);
             } 
             else if (posKey !== "0,0" && !clearedRooms.has(posKey) && !isBossRoom) {
-                // Dificuldade aumenta GRADUALMENTE a cada sala
                 let numInimigos = 3 + Math.floor(roomCount / 4) + Math.floor(specialUsageCount * 1);
                 numInimigos = Math.min(numInimigos, 8);
                 
@@ -679,7 +679,6 @@
                 }
             });
 
-            // NERF: Tiros mais lentos (shotDelay já aumentado para 250)
             if (keys['MouseDown'] && Date.now() - player.lastShot > player.shotDelay) {
                 const a = Math.atan2(mouse.y - (player.y+14), mouse.x - (player.x+14));
                 bullets.push({ x: player.x+14, y: player.y+14, vx: Math.cos(a)*12, vy: Math.sin(a)*12, hitEnemy: false });
@@ -747,7 +746,6 @@
                     spawnItem(en.x+en.size/2, en.y+en.size/2, en.mimic);
                     dustPoints = Math.min(MAX_DUST, dustPoints + 1);
                     
-                    // NOVO: Incrementa kills e verifica upgrade
                     totalKills++;
                     updateKillCounter();
                     checkUpgradeByKills();
@@ -756,6 +754,7 @@
                     
                     if(en.isBoss) {
                         bossDefeated = true;
+                        clearedRooms.add(`${currentPos.x},${currentPos.y}`);
                         document.getElementById('boss-warning').style.display = 'none';
                         createParticles(canvas.width/2, canvas.height/2, "#ffaa00", 100, 15);
                         setTimeout(() => {
@@ -1138,11 +1137,12 @@
             if (enemies.length > 0 && enemies[0].isBoss) { 
                 ctx.fillStyle = "#300"; 
                 ctx.fillRect(100, 20, 600, 15);
+                const bossHpPercent = (enemies[0].hp / 3000);
                 ctx.fillStyle = "red"; 
-                ctx.fillRect(100, 20, (enemies[0].hp/3000)*600, 15);
+                ctx.fillRect(100, 20, bossHpPercent * 600, 15);
                 ctx.fillStyle = "white";
                 ctx.font = "12px Courier New";
-                ctx.fillText("Lorde Ácaro", 380, 18);
+                ctx.fillText(`Lorde Ácaro - ${Math.floor(enemies[0].hp)}/3000`, 380, 18);
             }
 
             let darknessGradient = ctx.createRadialGradient(player.x+14, player.y+14, 50, player.x+14, player.y+14, 300);
@@ -1172,6 +1172,7 @@
             requestAnimationFrame(loop); 
         }
         
+        // MODO NORMAL - Boss aleatório (corrigido)
         bossRoomPosition = chooseRandomBossRoom();
         console.log(`Boss escondido na sala: (${bossRoomPosition.x}, ${bossRoomPosition.y})`);
         
