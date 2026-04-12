@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Allergy Knight: Mega Edition - Boss Aleatório Corrigido</title>
+    <title>Allergy Knight: Corações Permanentes</title>
     <style>
         body { margin: 0; background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Courier New', Courier, monospace; cursor: crosshair; }
         canvas { border: 5px solid #444; background: #1a1a1a; display: block; box-shadow: 0 0 30px rgba(0,255,255,0.2); }
@@ -21,19 +21,51 @@
             color: white; z-index: 100; text-align: center;
         }
 
-        #upgrade-menu { background: rgba(0, 0, 0, 0.95); }
+        #inventory-menu {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #00FFFF;
+            border-radius: 10px;
+            padding: 15px;
+            display: none;
+            z-index: 200;
+            min-width: 400px;
+            pointer-events: auto;
+        }
+        
+        .inventory-slot {
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-block;
+            width: 150px;
+            text-align: center;
+        }
+        
+        .inventory-slot:hover {
+            background: #00FFFF;
+            color: black;
+            transform: scale(1.05);
+        }
+        
+        .inventory-slot.equipped {
+            border: 2px solid #FFD700;
+            background: #333;
+            box-shadow: 0 0 10px gold;
+        }
         
         .btn-ui {
             background: #222; border: 2px solid #00FFFF; color: white; padding: 15px 30px; 
             cursor: pointer; font-family: 'Courier New'; font-size: 18px; transition: 0.2s; margin-top: 20px;
         }
         .btn-ui:hover { background: #00FFFF; color: black; box-shadow: 0 0 15px #00FFFF; }
-
-        .upgrade-btn {
-            background: #111; border: 1px solid #00FFFF; color: white; padding: 10px; cursor: pointer;
-            font-family: 'Courier New'; transition: 0.2s; width: 300px; margin-bottom: 10px;
-        }
-        .upgrade-btn:hover { background: #00FFFF; color: black; }
 
         #minimap-container { 
             position: absolute; top: 15px; right: 15px; 
@@ -77,6 +109,58 @@
             pointer-events: none;
             z-index: 10;
         }
+        
+        .inventory-hint {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            color: #00FFFF;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .item-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: gold;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            z-index: 200;
+            pointer-events: none;
+            animation: fadeOut 2s forwards;
+            white-space: nowrap;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            70% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); display: none; }
+        }
+        
+        .heart-counter {
+            position: absolute;
+            top: 15px;
+            left: 200px;
+            background: rgba(0,0,0,0.7);
+            color: #ff6699;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -87,10 +171,11 @@
         <button class="btn-ui" onclick="togglePause()">CONTINUAR (ESC)</button>
     </div>
 
-    <div id="upgrade-menu" class="menu-overlay">
-        <h2 style="color:#00FFFF; margin:0; font-size: 40px;">UPGRADE!</h2>
-        <p>Escolha uma melhoria para seu aspirador:</p>
-        <div id="upgrade-options" style="display:flex; flex-direction:column; align-items:center;"></div>
+    <div id="inventory-menu" class="menu-overlay" style="background: rgba(0,0,0,0.95);">
+        <h2 style="color:#00FFFF;">🎒 INVENTÁRIO</h2>
+        <p style="color:#aaa;">Clique em um item para equipar</p>
+        <div id="inventory-slots" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 500px;"></div>
+        <button class="btn-ui" style="margin-top: 20px;" onclick="closeInventory()">FECHAR (I)</button>
     </div>
 
     <div class="ui">
@@ -98,12 +183,14 @@
         <div id="room-info" style="font-size: 16px; color: #00FFFF; font-weight: bold;">SALA: 1</div>
         <div style="font-size: 11px; color: #aaa; margin-top: 8px;">CARGA DO ASPIRADOR:</div>
         <div class="special-bar-container"><div id="special-fill"></div></div>
-        <div id="upgrades-active" style="font-size: 10px; color: #00FF00; margin-top: 5px;"></div>
+        <div id="equipped-item" style="font-size: 10px; color: #FFD700; margin-top: 5px;"></div>
     </div>
 
     <div id="minimap-container"><canvas id="miniMap" width="140" height="140"></canvas></div>
     <div id="boss-warning" class="boss-warning" style="display: none;">⚠️ LORDE ÁCARO APROXIMA! ⚠️</div>
-    <div class="kill-counter" id="kill-counter">💀 INIMIGOS: 0 | PRÓXIMO UPGRADE: 10</div>
+    <div class="kill-counter" id="kill-counter">💀 INIMIGOS: 0</div>
+    <div class="heart-counter" id="heart-counter">💖 CORAÇÕES PERMANENTES: 0/5</div>
+    <div class="inventory-hint">📦 INVENTÁRIO: Pressione I</div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -121,8 +208,14 @@
         let specialUsageCount = 0; 
         
         let totalKills = 0;
-        let killsNeededForNextUpgrade = 10;
-        let upgradeKillsBase = 10;
+        
+        // NOVO: Sistema de corações permanentes
+        let permanentHearts = 0;
+        const MAX_PERMANENT_HEARTS = 5;
+        let heartItemsCollected = 0;
+        
+        // NOVO: Limite de salas (100)
+        const MAX_ROOMS = 100;
         
         let currentPos = { x: 0, y: 0 };
         let visitedRooms = new Set(["0,0"]);
@@ -131,7 +224,8 @@
         let gameTime = 0;
         let shakeTime = 0;
         const globalRoomData = {};
-        const WORLD_LIMIT = 8;
+        // REDUZIDO: Mapa menor (10x10 = 100 salas)
+        const WORLD_LIMIT = 5; // 11x11 = 121 salas (aproximadamente 100)
         
         let bossRoomPosition = null;
         let bossDefeated = false;
@@ -140,13 +234,210 @@
         let particles = [];
         let ambientDust = [];
         let items = [];
+        let powerUpItems = [];
+        let permanentHeartItems = []; // NOVO: Itens de coração permanente
+        
         let dustPoints = 0;
         const MAX_DUST = 10;
         let isSuperVacuumActive = false;
         let superVacuumTimer = 0;
 
-        const playerUpgrades = { filter: 200, battery: 180, water: false, mask: 3 };
+        // SISTEMA DE INVENTÁRIO
+        const availablePowerUps = {
+            'laminas': { name: "⚔️ Lâmina Rotatória", desc: "Dano em área ao redor", effect: "blades", active: false, cooldown: 0 },
+            'estatico': { name: "⚡ Raio Estático", desc: "Tiros causam dano em área", effect: "splash", active: false },
+            'roomba': { name: "🤖 Roomba Assistente", desc: "Aliado automático", effect: "roomba", active: false, hp: 30, x: 0, y: 0, vx: 0, vy: 0 },
+            'escudo': { name: "🛡️ Escudo de Ar", desc: "Reflete projéteis", effect: "shield", active: false },
+            'dash': { name: "💨 Dash Turbo", desc: "Teleporte rápido (Shift)", effect: "dash", active: false, lastDash: 0, cooldown: 1000 },
+            'ima': { name: "🧲 Ímã de Poeira", desc: "Coleta carga automática", effect: "magnet", active: false },
+            'congelamento': { name: "❄️ Congelamento", desc: "Inimigos ficam lentos", effect: "freeze", active: false }
+        };
         
+        let inventory = [];
+        let equippedItem = null;
+        let lastDashTime = 0;
+        let roombaActive = null;
+        let bladesTimer = 0;
+        
+        function showNotification(text, isHeart = false) {
+            const notification = document.createElement('div');
+            notification.className = 'item-notification';
+            if (isHeart) {
+                notification.style.color = "#ff6699";
+                notification.style.background = "rgba(0,0,0,0.9)";
+                notification.style.border = "2px solid #ff6699";
+            }
+            notification.textContent = text;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        }
+        
+        // NOVO: Spawn de coração permanente
+        function spawnPermanentHeart(x, y) {
+            if (heartItemsCollected >= MAX_PERMANENT_HEARTS) return;
+            permanentHeartItems.push({
+                x: x, y: y, type: 'permanent_heart', size: 18, collected: false
+            });
+        }
+        
+        // NOVO: Coletar coração permanente
+        function collectPermanentHeart(item) {
+            if (permanentHearts >= MAX_PERMANENT_HEARTS) return;
+            
+            permanentHearts++;
+            heartItemsCollected++;
+            player.maxHp += 2;
+            player.hp = Math.min(player.maxHp, player.hp + 2);
+            
+            showNotification(`💖 CORAÇÃO PERMANENTE! +1 VIDA MÁXIMA (${permanentHearts}/${MAX_PERMANENT_HEARTS})`, true);
+            updateHeartCounter();
+            updateUI();
+            
+            createParticles(item.x, item.y, "#ff6699", 20, 5);
+        }
+        
+        function updateHeartCounter() {
+            document.getElementById('heart-counter').innerHTML = `💖 CORAÇÕES PERMANENTES: ${permanentHearts}/${MAX_PERMANENT_HEARTS}`;
+        }
+        
+        function spawnPowerUpItem(x, y, powerUpId) {
+            powerUpItems.push({
+                x: x, y: y, type: 'powerup', powerUpId: powerUpId, size: 20
+            });
+        }
+        
+        function collectPowerUp(item) {
+            if (!inventory.includes(item.powerUpId)) {
+                inventory.push(item.powerUpId);
+                showNotification(`📦 ${availablePowerUps[item.powerUpId].name} ADICIONADO AO INVENTÁRIO!`);
+                updateInventoryUI();
+            } else {
+                showNotification(`⚠️ Você já possui este item!`);
+            }
+        }
+        
+        function equipItem(powerUpId) {
+            if (equippedItem === 'roomba' && roombaActive) {
+                roombaActive = null;
+            }
+            if (equippedItem === 'laminas') {
+                bladesTimer = 0;
+            }
+            
+            equippedItem = powerUpId;
+            showNotification(`🔧 EQUIPADO: ${availablePowerUps[powerUpId].name}`);
+            
+            if (equippedItem === 'roomba') {
+                spawnRoomba();
+            }
+            
+            updateInventoryUI();
+            updateUI();
+        }
+        
+        function openInventory() {
+            if (isGameOver || isPaused) return;
+            isPaused = true;
+            updateInventoryUI();
+            document.getElementById('inventory-menu').style.display = 'flex';
+        }
+        
+        function closeInventory() {
+            isPaused = false;
+            document.getElementById('inventory-menu').style.display = 'none';
+        }
+        
+        function updateInventoryUI() {
+            const container = document.getElementById('inventory-slots');
+            container.innerHTML = '';
+            
+            if (inventory.length === 0) {
+                container.innerHTML = '<p style="color:#888;">Nenhum item encontrado. Explore as salas!</p>';
+            } else {
+                inventory.forEach(powerUpId => {
+                    const item = availablePowerUps[powerUpId];
+                    const slot = document.createElement('div');
+                    slot.className = 'inventory-slot';
+                    if (equippedItem === powerUpId) slot.classList.add('equipped');
+                    slot.innerHTML = `<b>${item.name}</b><br><small>${item.desc}</small>`;
+                    slot.onclick = () => equipItem(powerUpId);
+                    container.appendChild(slot);
+                });
+            }
+        }
+        
+        function spawnRoomba() {
+            if (roombaActive) return;
+            roombaActive = {
+                x: player.x, y: player.y, size: 20, hp: 30, maxHp: 30,
+                vx: 0, vy: 0, lastShot: 0
+            };
+        }
+        
+        function updateRoomba() {
+            if (!roombaActive) return;
+            
+            let closest = null;
+            let closestDist = Infinity;
+            enemies.forEach(en => {
+                const dist = Math.hypot(roombaActive.x - (en.x+en.size/2), roombaActive.y - (en.y+en.size/2));
+                if (dist < closestDist && !en.isBoss) {
+                    closestDist = dist;
+                    closest = en;
+                }
+            });
+            
+            if (closest) {
+                const a = Math.atan2(closest.y+closest.size/2 - roombaActive.y, closest.x+closest.size/2 - roombaActive.x);
+                roombaActive.vx += Math.cos(a) * 0.5;
+                roombaActive.vy += Math.sin(a) * 0.5;
+            }
+            
+            roombaActive.vx *= 0.9;
+            roombaActive.vy *= 0.9;
+            roombaActive.x += roombaActive.vx;
+            roombaActive.y += roombaActive.vy;
+            
+            roombaActive.x = Math.max(10, Math.min(790, roombaActive.x));
+            roombaActive.y = Math.max(10, Math.min(590, roombaActive.y));
+            
+            enemies.forEach(en => {
+                const dist = Math.hypot(roombaActive.x - (en.x+en.size/2), roombaActive.y - (en.y+en.size/2));
+                if (dist < 30 && Date.now() - roombaActive.lastShot > 500) {
+                    en.hp -= 5;
+                    roombaActive.lastShot = Date.now();
+                    createParticles(roombaActive.x, roombaActive.y, "#00FFFF", 5);
+                }
+            });
+            
+            if (roombaActive.hp <= 0) roombaActive = null;
+        }
+        
+        function drawRoomba() {
+            if (!roombaActive) return;
+            ctx.save();
+            ctx.translate(roombaActive.x, roombaActive.y);
+            ctx.fillStyle = "#C0C0C0";
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#333";
+            ctx.beginPath();
+            ctx.arc(-4, -3, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(4, -3, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#00FFFF";
+            ctx.font = "10px Arial";
+            ctx.fillText("🤖", -6, 5);
+            ctx.fillStyle = "red";
+            ctx.fillRect(-10, -12, 20, 3);
+            ctx.fillStyle = "#0f0";
+            ctx.fillRect(-10, -12, 20 * (roombaActive.hp/roombaActive.maxHp), 3);
+            ctx.restore();
+        }
+
         const player = { 
             x: 400, y: 300, size: 28, speed: 3.0, hp: 6, maxHp: 6, 
             vx: 0, vy: 0, invincible: false, lastShot: 0, 
@@ -168,17 +459,8 @@
 
         for(let i=0; i<40; i++) ambientDust.push({x: Math.random()*800, y: Math.random()*600, s: Math.random()*2+1, o: Math.random()});
 
-        function checkUpgradeByKills() {
-            if(totalKills >= killsNeededForNextUpgrade && !isUpgrading && !bossDefeated && !isGameOver) {
-                killsNeededForNextUpgrade += upgradeKillsBase + Math.floor(totalKills / 20);
-                openUpgradeMenu();
-                updateKillCounter();
-            }
-        }
-        
         function updateKillCounter() {
-            const remaining = Math.max(0, killsNeededForNextUpgrade - totalKills);
-            document.getElementById('kill-counter').innerHTML = `💀 INIMIGOS: ${totalKills} | PRÓXIMO UPGRADE: ${remaining}`;
+            document.getElementById('kill-counter').innerHTML = `💀 INIMIGOS: ${totalKills}`;
         }
 
         function chooseRandomBossRoom() {
@@ -223,35 +505,6 @@
             if (isGameOver || isUpgrading) return;
             isPaused = !isPaused;
             document.getElementById('pause-menu').style.display = isPaused ? 'flex' : 'none';
-        }
-
-        function openUpgradeMenu() {
-            isUpgrading = true;
-            const menu = document.getElementById('upgrade-menu');
-            const container = document.getElementById('upgrade-options');
-            container.innerHTML = '';
-            menu.style.display = 'flex';
-            
-            const pool = [
-                { id: 'filter', name: 'Filtro HEPA', desc: 'Cone de vácuo maior +50' },
-                { id: 'battery', name: 'Bateria Lítio', desc: 'Especial dura +1.5s' },
-                { id: 'water', name: 'Spray Água', desc: 'Tiros causam lentidão' },
-                { id: 'mask', name: 'Máscara Cirúrgica', desc: '+1 Coração Máximo' }
-            ];
-            
-            pool.sort(() => Math.random() - 0.5).slice(0, 3).forEach(up => {
-                const btn = document.createElement('button');
-                btn.className = 'upgrade-btn';
-                btn.innerHTML = `<b>${up.name}</b><br><small>${up.desc}</small>`;
-                btn.onclick = () => {
-                    if(up.id === 'filter') playerUpgrades.filter += 50;
-                    if(up.id === 'battery') playerUpgrades.battery += 90;
-                    if(up.id === 'water') playerUpgrades.water = true;
-                    if(up.id === 'mask') { player.maxHp += 2; player.hp += 2; playerUpgrades.mask++; }
-                    menu.style.display = 'none'; isUpgrading = false; updateUI();
-                };
-                container.appendChild(btn);
-            });
         }
 
         function createParticles(x, y, color, count = 8, speed = 4) {
@@ -343,6 +596,8 @@
             enemyBullets = [];
             items = [];
             particles = [];
+            powerUpItems = [];
+            // NOVO: Não resetar permanentHeartItems, eles persistem na sala
             
             const roomData = getRoomData(posKey);
             
@@ -356,9 +611,7 @@
             
             const isBossRoom = roomData.isBossRoom;
             
-            // SPAWN DO BOSS - Versão corrigida
             if (isBossRoom && !bossDefeated && !clearedRooms.has(posKey)) {
-                console.log("🔴 É SALA DO BOSS! Spawnando o Lorde Ácaro...");
                 spawnEnemy(canvas.width/2 - 65, canvas.height/2 - 65, 'boss');
                 document.getElementById('room-info').style.color = "#ff4444";
                 document.getElementById('room-info').style.textShadow = "0 0 10px red";
@@ -389,6 +642,20 @@
                         spawnEnemy(ex, ey, eType);
                     }
                 }
+                
+                // NOVO: Spawn de coração permanente (20% de chance, mas apenas 5 no total)
+                if (Math.random() < 0.2 && permanentHearts < MAX_PERMANENT_HEARTS && permanentHeartItems.length === 0) {
+                    spawnPermanentHeart(canvas.width/2, canvas.height/2);
+                }
+                
+                // Spawn de power-up (30% de chance)
+                if (Math.random() < 0.3 && powerUpItems.length === 0) {
+                    const powerUpIds = Object.keys(availablePowerUps);
+                    const randomPowerUp = powerUpIds[Math.floor(Math.random() * powerUpIds.length)];
+                    if (!inventory.includes(randomPowerUp)) {
+                        spawnPowerUpItem(canvas.width/2, canvas.height/2, randomPowerUp);
+                    }
+                }
             }
             
             updateUI();
@@ -405,7 +672,8 @@
 
         function updateUI() {
             let h = ""; let temp = player.hp;
-            for (let i=0; i<playerUpgrades.mask; i++) {
+            // Mostra corações baseado no maxHp (cada coração = 2 HP)
+            for (let i=0; i<player.maxHp/2; i++) {
                 if (temp >= 2) h += "❤️"; 
                 else if (temp === 1) h += "💔"; 
                 else h += "🖤";
@@ -422,12 +690,16 @@
                 document.getElementById('room-info').style.textShadow = "none";
             }
             
-            document.getElementById('upgrades-active').innerHTML = playerUpgrades.water ? "💦 SPRAY DE ÁGUA ATIVO" : "";
-            
             const fill = document.getElementById('special-fill');
             const chargePercent = (player.vacuumCharge / player.maxVacuumCharge) * 100;
             fill.style.width = chargePercent + "%";
             fill.style.background = player.vacuumCharge >= player.maxVacuumCharge ? "#FF00FF" : "#00FFFF";
+            
+            if (equippedItem && availablePowerUps[equippedItem]) {
+                document.getElementById('equipped-item').innerHTML = `🔧 EQUIPADO: ${availablePowerUps[equippedItem].name}`;
+            } else {
+                document.getElementById('equipped-item').innerHTML = `🔧 NENHUM ITEM EQUIPADO`;
+            }
 
             // MINIMAPA
             mCtx.clearRect(0,0,140,140);
@@ -478,15 +750,37 @@
         window.onkeydown = (e) => {
             keys[e.code] = true;
             if (e.code === 'Escape') togglePause();
+            if (e.code === 'KeyI') {
+                e.preventDefault();
+                if (isPaused && document.getElementById('inventory-menu').style.display === 'flex') {
+                    closeInventory();
+                } else if (!isPaused && !isGameOver) {
+                    openInventory();
+                }
+            }
             if (e.code === 'Space' && player.vacuumCharge >= player.maxVacuumCharge && !isSuperVacuumActive && !isGameOver && !isPaused && !isUpgrading) {
                 e.preventDefault();
                 isSuperVacuumActive = true;
                 player.vacuumCharge = 0;
                 specialUsageCount++;
-                superVacuumTimer = playerUpgrades.battery;
+                superVacuumTimer = 180;
                 shakeTime = 20;
                 updateUI();
                 createParticles(player.x+14, player.y+14, "#FF00FF", 30, 8);
+            }
+            if (e.code === 'ShiftLeft' && equippedItem === 'dash' && Date.now() - lastDashTime > 1000 && !isPaused && !isGameOver) {
+                e.preventDefault();
+                lastDashTime = Date.now();
+                const dashDistance = 100;
+                if (keys['KeyW']) player.y -= dashDistance;
+                if (keys['KeyS']) player.y += dashDistance;
+                if (keys['KeyA']) player.x -= dashDistance;
+                if (keys['KeyD']) player.x += dashDistance;
+                player.x = Math.max(0, Math.min(800-player.size, player.x));
+                player.y = Math.max(0, Math.min(600-player.size, player.y));
+                createParticles(player.x+14, player.y+14, "#00FFFF", 20, 5);
+                player.invincible = true;
+                setTimeout(() => player.invincible = false, 300);
             }
         };
         window.onkeyup = (e) => keys[e.code] = false;
@@ -537,6 +831,26 @@
             if (!checkCollision(finalX, player.y, player.size, roomData.obstacles)) 
                 player.x = Math.max(0, Math.min(800-player.size, finalX));
 
+            // Coletar corações permanentes
+            permanentHeartItems = permanentHeartItems.filter(ph => {
+                if (Math.hypot(player.x+14 - ph.x, player.y+14 - ph.y) < 30) {
+                    collectPermanentHeart(ph);
+                    return false;
+                }
+                return true;
+            });
+
+            // Coletar power-ups
+            powerUpItems = powerUpItems.filter(pu => {
+                if (Math.hypot(player.x+14 - pu.x, player.y+14 - pu.y) < 30) {
+                    collectPowerUp(pu);
+                    createParticles(pu.x, pu.y, "#FFD700", 15, 4);
+                    return false;
+                }
+                return true;
+            });
+
+            // Coletar itens de cura
             items = items.filter(it => {
                 if (Math.hypot(player.x+14 - it.x, player.y+14 - it.y) < 30) {
                     if(it.isMimic && !it.revealed) {
@@ -555,6 +869,14 @@
 
             particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; });
             particles = particles.filter(p => p.life > 0);
+
+            // Efeito Ímã
+            if (equippedItem === 'ima') {
+                if (Math.random() < 0.02) {
+                    player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge + 1);
+                    updateUI();
+                }
+            }
 
             ambientObjects.forEach(obj => {
                 if(obj.type === 'fan') {
@@ -581,6 +903,22 @@
                     }
                 }
             });
+
+            // Efeito Lâminas
+            if (equippedItem === 'laminas') {
+                bladesTimer++;
+                if (bladesTimer > 10) {
+                    bladesTimer = 0;
+                    enemies.forEach(en => {
+                        const dist = Math.hypot(player.x+14 - (en.x+en.size/2), player.y+14 - (en.y+en.size/2));
+                        if (dist < 70) {
+                            en.hp -= 3;
+                            en.flash = 2;
+                            createParticles(en.x+en.size/2, en.y+en.size/2, "#00FFFF", 2);
+                        }
+                    });
+                }
+            }
 
             enemies.forEach(en => {
                 const enCX = en.x + en.size/2;
@@ -654,7 +992,7 @@
                 en.vx *= 0.9; 
                 en.vy *= 0.9;
                 
-                if (player.isVacuuming && dist < playerUpgrades.filter) {
+                if (player.isVacuuming && dist < 200) {
                     const a = Math.atan2(enCY - (player.y+14), enCX - (player.x+14));
                     if(isSuperVacuumActive) { 
                         en.vx -= Math.cos(a) * 12;
@@ -699,6 +1037,7 @@
                     }
                 });
                 
+                let hitCount = 0;
                 enemies.forEach(en => { 
                     if(Math.hypot(b.x-(en.x+en.size/2), b.y-(en.y+en.size/2)) < en.size/2){ 
                         let damage = 10;
@@ -706,8 +1045,23 @@
                         en.flash = 2; 
                         hit = true;
                         b.hitEnemy = true;
-                        if(playerUpgrades.water) en.slow = 120;
-                        createParticles(b.x, b.y, en.color, 3, 2); 
+                        hitCount++;
+                        
+                        if(equippedItem === 'congelamento') {
+                            en.slow = 60;
+                        }
+                        
+                        createParticles(b.x, b.y, en.color, 3, 2);
+                        
+                        if(equippedItem === 'estatico') {
+                            enemies.forEach(otherEn => {
+                                if(otherEn !== en && Math.hypot(b.x - (otherEn.x+otherEn.size/2), b.y - (otherEn.y+otherEn.size/2)) < 60) {
+                                    otherEn.hp -= 5;
+                                    otherEn.flash = 2;
+                                    createParticles(b.x, b.y, "#ffff00", 5, 3);
+                                }
+                            });
+                        }
                     } 
                 });
                 
@@ -719,9 +1073,19 @@
                 return !hit && b.x > 0 && b.x < 800 && b.y > 0 && b.y < 600;
             });
 
+            updateRoomba();
+
             enemyBullets = enemyBullets.filter(eb => {
                 eb.x += eb.vx; 
                 eb.y += eb.vy;
+                
+                if (equippedItem === 'escudo' && Math.hypot(eb.x - (player.x+14), eb.y - (player.y+14)) < 25) {
+                    const angle = Math.atan2(eb.y - (player.y+14), eb.x - (player.x+14));
+                    enemyBullets.push({x: player.x+14, y: player.y+14, vx: Math.cos(angle + Math.PI)*8, vy: Math.sin(angle + Math.PI)*8});
+                    createParticles(eb.x, eb.y, "#00FFFF", 5);
+                    return false;
+                }
+                
                 if(Math.hypot(eb.x - (player.x+14), eb.y - (player.y+14)) < 15 && !player.invincible){ 
                     player.hp--; 
                     updateUI(); 
@@ -748,7 +1112,6 @@
                     
                     totalKills++;
                     updateKillCounter();
-                    checkUpgradeByKills();
                     
                     updateUI();
                     
@@ -865,6 +1228,43 @@
                     ctx.shadowBlur = 0; 
                 }); 
             }
+            
+            // Desenhar corações permanentes (rosa/vermelho diferente)
+            permanentHeartItems.forEach(ph => {
+                ctx.fillStyle = "#ff6699";
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#ff6699";
+                ctx.beginPath();
+                ctx.arc(ph.x, ph.y, 14, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "#FFF";
+                ctx.font = "18px Arial";
+                ctx.fillText("💖", ph.x-9, ph.y+7);
+                ctx.shadowBlur = 0;
+                // Efeito pulsante
+                ctx.fillStyle = `rgba(255,102,153,${0.3 + Math.sin(gameTime * 10) * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(ph.x, ph.y, 18, 0, Math.PI*2);
+                ctx.fill();
+            });
+            
+            // Desenhar power-ups no chão
+            powerUpItems.forEach(pu => {
+                const powerUp = availablePowerUps[pu.powerUpId];
+                ctx.fillStyle = "#FFD700";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#FFD700";
+                ctx.beginPath();
+                ctx.arc(pu.x, pu.y, 12, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = "#000";
+                ctx.font = "16px Arial";
+                ctx.fillText(powerUp.name.charAt(0), pu.x-6, pu.y+6);
+                ctx.fillStyle = "#FFF";
+                ctx.font = "10px Arial";
+                ctx.fillText("?", pu.x-2, pu.y+4);
+                ctx.shadowBlur = 0;
+            });
             
             items.forEach(it => { 
                 if(it.isMimic && !it.revealed) {
@@ -1095,6 +1495,8 @@
                 ctx.restore();
             });
 
+            drawRoomba();
+
             if (!player.invincible || Math.floor(gameTime*10) % 2 === 0) {
                 ctx.save();
                 const bobOffset = Math.sin(player.walkCycle) * 4;
@@ -1121,15 +1523,44 @@
                     ctx.fillStyle = isSuperVacuumActive ? "rgba(255, 0, 255, 0.4)" : "rgba(0, 255, 255, 0.2)"; 
                     ctx.beginPath(); 
                     ctx.moveTo(35,0); 
-                    ctx.lineTo(playerUpgrades.filter,-70); 
-                    ctx.lineTo(playerUpgrades.filter,70); 
+                    ctx.lineTo(200,-70); 
+                    ctx.lineTo(200,70); 
                     ctx.fill(); 
                 }
+                
+                if (equippedItem === 'laminas') {
+                    ctx.fillStyle = "rgba(0, 255, 255, 0.2)";
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 70, 0, Math.PI*2);
+                    ctx.fill();
+                    for(let i=0; i<4; i++) {
+                        const bladeAngle = gameTime * 10 + (i * Math.PI/2);
+                        ctx.fillStyle = "#00FFFF";
+                        ctx.beginPath();
+                        ctx.moveTo(Math.cos(bladeAngle)*30, Math.sin(bladeAngle)*30);
+                        ctx.lineTo(Math.cos(bladeAngle+0.4)*55, Math.sin(bladeAngle+0.4)*55);
+                        ctx.lineTo(Math.cos(bladeAngle-0.4)*55, Math.sin(bladeAngle-0.4)*55);
+                        ctx.fill();
+                    }
+                }
+                
+                if (equippedItem === 'escudo') {
+                    ctx.fillStyle = "rgba(0, 255, 255, 0.15)";
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 30, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.strokeStyle = "#00FFFF";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 30, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+                
                 ctx.restore(); 
                 ctx.restore();
             }
 
-            ctx.fillStyle = playerUpgrades.water ? "#00FFFF" : "yellow"; 
+            ctx.fillStyle = "#FFFF00"; 
             bullets.forEach(b => ctx.fillRect(b.x-2, b.y-2, 4, 4));
             ctx.fillStyle = "magenta"; 
             enemyBullets.forEach(eb => { ctx.beginPath(); ctx.arc(eb.x, eb.y, 5, 0, Math.PI*2); ctx.fill(); });
@@ -1168,11 +1599,10 @@
 
         function loop() { 
             update(); 
-            draw(); 
+                draw();     
             requestAnimationFrame(loop); 
         }
         
-        // MODO NORMAL - Boss aleatório (corrigido)
         bossRoomPosition = chooseRandomBossRoom();
         console.log(`Boss escondido na sala: (${bossRoomPosition.x}, ${bossRoomPosition.y})`);
         
