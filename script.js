@@ -1,4 +1,4 @@
-// script.js
+// script.js - VERSÃO OTIMIZADA (ANTI-TRAVAMENTO)
 (function() {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -6,6 +6,14 @@
     const mCtx = mCanvas.getContext('2d');
     canvas.width = 800; canvas.height = 600;
     mCanvas.width = 140; mCanvas.height = 140;
+
+    // ---------- LIMITES DE OTIMIZAÇÃO ----------
+    const MAX_PARTICLES = 150;
+    const MAX_ITEMS = 100;
+    const MAX_ENEMIES = 25;
+    const MAX_BULLETS = 40;
+    const MAX_ENEMY_BULLETS = 30;
+    const MAX_BOSS_TRAPS = 10;
 
     // ---------- Variáveis Globais ----------
     let isGameOver = false, isPaused = false;
@@ -21,7 +29,9 @@
     let bossRoomPosition = null, bossDefeated = false, bossWarningGiven = false, bossType = null;
     let particles = [], ambientDust = [], items = [], powerUpItems = [], bossTraps = [];
     let isSuperVacuumActive = false, superVacuumTimer = 0;
-    let roomsExplored = 0; // Faltava essa variável!
+    let roomsExplored = 0;
+    let dustCount = 0;
+    let frameCount = 0;
 
     // ---------- Configuração dos Bosses ----------
     const bossTypesMap = {
@@ -72,7 +82,8 @@
         'escudo': { name: "🛡️ Escudo", effect: "shield", size: [2, 2], color: "#4488FF" },
         'dash': { name: "💨 Dash", effect: "dash", size: [1, 1], color: "#00FFAA" },
         'ima': { name: "🧲 Ímã", effect: "magnet", size: [1, 1], color: "#FF8888" },
-        'congelamento': { name: "❄️ Gelo", effect: "freeze", size: [2, 2], color: "#88CCFF" }
+        'congelamento': { name: "❄️ Gelo", effect: "freeze", size: [2, 2], color: "#88CCFF" },
+        'dust': { name: "✨ Pó", effect: null, size: [1, 1], color: "#FFD700", stackable: true, maxStack: 999 }
     };
 
     let reGrid = Array(RE_GRID_ROWS).fill().map(() => Array(RE_GRID_COLS).fill(0));
@@ -84,11 +95,11 @@
     function initializeREInventory() {
         reGrid = Array(RE_GRID_ROWS).fill().map(() => Array(RE_GRID_COLS).fill(0));
         rePlacedItems = [];
-        
+        if (dustCount > 0) placeItem('dust', 0, 0);
         inventory.forEach((itemId) => {
+            if (itemId === 'dust') return;
             const def = reItemDefinitions[itemId];
             if (!def) return;
-            
             let placed = false;
             for (let row = 0; row <= RE_GRID_ROWS - def.size[1] && !placed; row++) {
                 for (let col = 0; col <= RE_GRID_COLS - def.size[0] && !placed; col++) {
@@ -115,16 +126,13 @@
     function placeItem(itemId, row, col) {
         const def = reItemDefinitions[itemId];
         if (!def) return;
-        
         rePlacedItems = rePlacedItems.filter(item => item.id !== itemId);
         reGrid = reGrid.map(row => row.map(cell => cell === itemId ? 0 : cell));
-        
         for (let r = row; r < row + def.size[1]; r++) {
             for (let c = col; c < col + def.size[0]; c++) {
                 reGrid[r][c] = itemId;
             }
         }
-        
         rePlacedItems.push({ id: itemId, row, col });
     }
 
@@ -134,10 +142,8 @@
         reCanvas.width = RE_GRID_WIDTH;
         reCanvas.height = RE_GRID_HEIGHT;
         const ctxRE = reCanvas.getContext('2d');
-        
         ctxRE.fillStyle = '#111';
         ctxRE.fillRect(0, 0, RE_GRID_WIDTH, RE_GRID_HEIGHT);
-        
         ctxRE.strokeStyle = '#333';
         ctxRE.lineWidth = 1;
         for (let i = 0; i <= RE_GRID_COLS; i++) {
@@ -152,23 +158,18 @@
             ctxRE.lineTo(RE_GRID_WIDTH, i * RE_CELL_SIZE);
             ctxRE.stroke();
         }
-        
         rePlacedItems.forEach(item => {
             const def = reItemDefinitions[item.id];
             if (!def) return;
-            
             const x = item.col * RE_CELL_SIZE;
             const y = item.row * RE_CELL_SIZE;
             const w = def.size[0] * RE_CELL_SIZE;
             const h = def.size[1] * RE_CELL_SIZE;
-            
             ctxRE.fillStyle = equippedItems.includes(item.id) ? '#2a2a1a' : '#1a1a1a';
             ctxRE.fillRect(x + 2, y + 2, w - 4, h - 4);
-            
             ctxRE.strokeStyle = equippedItems.includes(item.id) ? '#FFD700' : def.color;
             ctxRE.lineWidth = equippedItems.includes(item.id) ? 3 : 2;
             ctxRE.strokeRect(x + 2, y + 2, w - 4, h - 4);
-            
             if (equippedItems.includes(item.id)) {
                 ctxRE.shadowColor = '#FFD700';
                 ctxRE.shadowBlur = 15;
@@ -176,26 +177,27 @@
                 ctxRE.strokeRect(x + 2, y + 2, w - 4, h - 4);
                 ctxRE.shadowBlur = 0;
             }
-            
             ctxRE.fillStyle = '#FFF';
             ctxRE.font = 'bold 11px Arial';
             ctxRE.textAlign = 'center';
-            ctxRE.fillText(def.name, x + w/2, y + h/2 + 4);
-            
+            if (item.id === 'dust') {
+                ctxRE.font = 'bold 14px Arial';
+                ctxRE.fillText(`✨ ${dustCount}`, x + w/2, y + h/2 + 5);
+            } else {
+                ctxRE.fillText(def.name, x + w/2, y + h/2 + 4);
+            }
             if (equippedItems.includes(item.id)) {
                 ctxRE.fillStyle = '#FFD700';
                 ctxRE.font = '10px Arial';
                 ctxRE.fillText('✓', x + w - 12, y + 14);
             }
         });
-        
         if (reDragging && reMouseGridPos.row >= 0 && reMouseGridPos.col >= 0) {
             const def = reItemDefinitions[reDragging.id];
             const w = def.size[0] * RE_CELL_SIZE;
             const h = def.size[1] * RE_CELL_SIZE;
             const x = reMouseGridPos.col * RE_CELL_SIZE;
             const y = reMouseGridPos.row * RE_CELL_SIZE;
-            
             ctxRE.fillStyle = canPlaceItem(reMouseGridPos.row, reMouseGridPos.col, def.size[0], def.size[1], reDragging.id) 
                 ? 'rgba(0, 255, 255, 0.3)' 
                 : 'rgba(255, 0, 0, 0.3)';
@@ -209,7 +211,6 @@
     function toggleREInventory() {
         const overlay = document.getElementById('re-inventory');
         if (!overlay) return;
-        
         if (overlay.style.display === 'flex') {
             overlay.style.display = 'none';
             isPaused = false;
@@ -225,27 +226,21 @@
 
     function updateREEquippedInfo() {
         const info = document.getElementById('re-equipped-info');
-        if (info) {
-            info.textContent = `⚔️ Equipados: ${equippedItems.length}/${MAX_EQUIPPED}`;
-        }
+        if (info) info.textContent = `⚔️ Equipados: ${equippedItems.length}/${MAX_EQUIPPED} | ✨ Pó: ${dustCount}`;
     }
 
-    // Setup dos eventos do canvas RE
     function setupREInventoryEvents() {
         const reCanvas = document.getElementById('reInventoryCanvas');
         if (!reCanvas) return;
-        
         reCanvas.addEventListener('mousedown', (e) => {
             const rect = reCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             const col = Math.floor(x / RE_CELL_SIZE);
             const row = Math.floor(y / RE_CELL_SIZE);
-            
             if (row < 0 || row >= RE_GRID_ROWS || col < 0 || col >= RE_GRID_COLS) return;
-            
             const cellId = reGrid[row][col];
-            if (cellId !== 0) {
+            if (cellId !== 0 && cellId !== 'dust') {
                 const item = rePlacedItems.find(i => i.id === cellId);
                 if (item) {
                     const now = Date.now();
@@ -267,27 +262,22 @@
                 }
             }
         });
-        
         reCanvas.addEventListener('mousemove', (e) => {
             if (!reDragging) return;
-            
             const rect = reCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             const col = Math.floor((x - reDragging.offsetX) / RE_CELL_SIZE);
             const row = Math.floor((y - reDragging.offsetY) / RE_CELL_SIZE);
-            
             const newPos = {
                 row: Math.max(0, Math.min(RE_GRID_ROWS - reDragging.size[1], row)),
                 col: Math.max(0, Math.min(RE_GRID_COLS - reDragging.size[0], col))
             };
-            
             if (newPos.row !== reMouseGridPos.row || newPos.col !== reMouseGridPos.col) {
                 reMouseGridPos = newPos;
                 drawREInventory();
             }
         });
-        
         reCanvas.addEventListener('mouseup', () => {
             if (reDragging && reMouseGridPos.row >= 0 && reMouseGridPos.col >= 0) {
                 if (canPlaceItem(reMouseGridPos.row, reMouseGridPos.col, reDragging.size[0], reDragging.size[1], reDragging.id)) {
@@ -298,7 +288,6 @@
             reMouseGridPos = { row: -1, col: -1 };
             drawREInventory();
         });
-        
         reCanvas.addEventListener('mouseleave', () => {
             reDragging = null;
             reMouseGridPos = { row: -1, col: -1 };
@@ -306,7 +295,111 @@
         });
     }
 
-    // ---------- Funções Auxiliares (original) ----------
+    // ========== CONTROLES MOBILE ==========
+    let joystickActive = false;
+    let joystickCenter = { x: 0, y: 0 };
+
+    function initMobileControls() {
+        const joystickArea = document.getElementById('joystickArea');
+        const joystickThumb = document.getElementById('joystickThumb');
+        if (!joystickArea || !joystickThumb) return;
+
+        joystickArea.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            joystickActive = true;
+            const rect = joystickArea.getBoundingClientRect();
+            joystickCenter = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+            updateJoystick(e.touches[0]);
+        });
+        joystickArea.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (joystickActive) updateJoystick(e.touches[0]);
+        });
+        joystickArea.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            joystickActive = false;
+            joystickThumb.style.transform = 'translate(-50%, -50%)';
+            keys['KeyW'] = keys['KeyS'] = keys['KeyA'] = keys['KeyD'] = false;
+        });
+
+        function updateJoystick(touch) {
+            const dx = touch.clientX - joystickCenter.x;
+            const dy = touch.clientY - joystickCenter.y;
+            const dist = Math.min(45, Math.sqrt(dx*dx + dy*dy));
+            const angle = Math.atan2(dy, dx);
+            const thumbX = Math.cos(angle) * dist;
+            const thumbY = Math.sin(angle) * dist;
+            joystickThumb.style.transform = `translate(calc(-50% + ${thumbX}px), calc(-50% + ${thumbY}px))`;
+            keys['KeyD'] = dx > 15;
+            keys['KeyA'] = dx < -15;
+            keys['KeyS'] = dy > 15;
+            keys['KeyW'] = dy < -15;
+        }
+
+        const shootBtn = document.getElementById('shootBtn');
+        if (shootBtn) {
+            shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys['MouseDown'] = true; });
+            shootBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys['MouseDown'] = false; });
+        }
+
+        const vacuumBtn = document.getElementById('vacuumBtn');
+        if (vacuumBtn) {
+            vacuumBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (player.vacuumCharge >= player.maxVacuumCharge && !isSuperVacuumActive && !isGameOver && !isPaused) {
+                    isSuperVacuumActive = true;
+                    player.vacuumCharge = 0;
+                    specialUsageCount++;
+                    superVacuumTimer = 180;
+                    shakeTime = 20;
+                    updateUI();
+                    createParticles(player.x+14, player.y+14, '#F0F', 15, 4);
+                }
+            });
+        }
+
+        const dashBtn = document.getElementById('dashBtn');
+        if (dashBtn) {
+            dashBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (isItemEquipped('dash') && Date.now()-lastDashTime>1000 && !isPaused && !isGameOver) {
+                    lastDashTime = Date.now();
+                    if (keys['KeyW']) player.y -= 100;
+                    if (keys['KeyS']) player.y += 100;
+                    if (keys['KeyA']) player.x -= 100;
+                    if (keys['KeyD']) player.x += 100;
+                    player.x = Math.max(0, Math.min(800-player.size, player.x));
+                    player.y = Math.max(0, Math.min(600-player.size, player.y));
+                    createParticles(player.x+14, player.y+14, '#0FF', 10, 3);
+                    player.invincible = true;
+                    setTimeout(() => player.invincible = false, 300);
+                }
+            });
+        }
+
+        const inventoryBtn = document.getElementById('inventoryBtn');
+        if (inventoryBtn) {
+            inventoryBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                toggleREInventory();
+            });
+        }
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = (e.touches[0].clientX - rect.left) * (800 / rect.width);
+            mouse.y = (e.touches[0].clientY - rect.top) * (600 / rect.height);
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = (e.touches[0].clientX - rect.left) * (800 / rect.width);
+            mouse.y = (e.touches[0].clientY - rect.top) * (600 / rect.height);
+        });
+    }
+
+    // ---------- Funções Auxiliares ----------
     function generateRoomLayout() {
         roomGraph.clear(); allRoomPositions = [];
         allRoomPositions.push({x:0,y:0});
@@ -360,15 +453,16 @@
     }
 
     function spawnPowerUpItem(x,y,id) { powerUpItems.push({x,y,type:'powerup',powerUpId:id,size:20}); }
+    
     function collectPowerUp(item) {
         if(!inventory.includes(item.powerUpId)) {
             inventory.push(item.powerUpId);
             showNotification(`📦 ${availablePowerUps[item.powerUpId].name} ADICIONADO!`);
-            updateInventoryUI();
         } else showNotification(`⚠️ Você já possui este item!`);
     }
 
     function equipItem(id) {
+        if (id === 'dust') return;
         if(equippedItems.includes(id)) {
             let idx = equippedItems.indexOf(id);
             equippedItems.splice(idx,1);
@@ -379,33 +473,19 @@
             showNotification(`🔧 EQUIPADO: ${availablePowerUps[id].name} (${equippedItems.length}/${MAX_EQUIPPED})`);
             if(id==='roomba' && !roombaActive) spawnRoomba();
         } else showNotification(`⚠️ Máximo de ${MAX_EQUIPPED} itens equipados!`);
-        updateInventoryUI(); updateUI(); updateBuildCounter();
+        updateUI(); updateBuildCounter();
         updateREEquippedInfo();
     }
 
     function isItemEquipped(effect) { return equippedItems.some(i=>availablePowerUps[i]?.effect===effect); }
-    function openInventory() { if(!isGameOver && !isPaused){ isPaused=true; updateInventoryUI(); document.getElementById('inventory-menu').style.display='flex';} }
+    function openInventory() { toggleREInventory(); }
     function closeInventory() { isPaused=false; document.getElementById('inventory-menu').style.display='none'; }
-    function updateInventoryUI() {
-        let container = document.getElementById('inventory-slots');
-        if(!container) return;
-        container.innerHTML = '';
-        if(inventory.length===0) container.innerHTML='<p style="color:#888;">Nenhum item. Explore as salas!</p>';
-        else inventory.forEach(id=>{
-            let item = availablePowerUps[id];
-            let slot = document.createElement('div');
-            slot.className = 'inventory-slot';
-            if(equippedItems.includes(id)) slot.classList.add('equipped');
-            slot.innerHTML = `<b>${item.name}</b><br><small>${item.desc||''}</small>`;
-            slot.onclick = ()=>equipItem(id);
-            container.appendChild(slot);
-        });
-    }
 
     function spawnRoomba() {
         if(roombaActive) return;
         roombaActive = { x:player.x, y:player.y, size:20, hp:30, maxHp:30, vx:0, vy:0, lastShot:0 };
     }
+    
     function updateRoomba() {
         if(!roombaActive) return;
         let closest=null, closestDist=Infinity;
@@ -432,11 +512,13 @@
             let dx = roombaActive.x - (en.x+en.size/2);
             let dy = roombaActive.y - (en.y+en.size/2);
             if(dx*dx+dy*dy < 900 && Date.now()-roombaActive.lastShot>500){
-                en.hp-=5; roombaActive.lastShot=Date.now(); createParticles(roombaActive.x,roombaActive.y,"#0FF",5);
+                en.hp-=5; roombaActive.lastShot=Date.now();
+                if(particles.length < MAX_PARTICLES) createParticles(roombaActive.x,roombaActive.y,"#0FF",3);
             }
         }
         if(roombaActive.hp<=0) roombaActive=null;
     }
+    
     function drawRoomba() {
         if(!roombaActive) return;
         ctx.save(); ctx.translate(roombaActive.x,roombaActive.y);
@@ -449,18 +531,61 @@
 
     function updateKillCounter() { document.getElementById('kill-counter').innerHTML = `💀 INIMIGOS: ${totalKills}`; }
     function escolherBossAleatorio() { return ['acaro','tufo','esporo','polen','mofo'][Math.floor(Math.random()*5)]; }
+    
     function checkBossProximity() {
         if(bossDefeated || !bossRoomPosition) return false;
-        if(currentPos.x===bossRoomPosition.x && currentPos.y===bossRoomPosition.y){ return true; }
+        if(currentPos.x===bossRoomPosition.x && currentPos.y===bossRoomPosition.y) return true;
         const adj = [[1,0],[-1,0],[0,1],[0,-1]];
         const isNear = adj.some(([dx,dy])=> (currentPos.x+dx===bossRoomPosition.x && currentPos.y+dy===bossRoomPosition.y));
-        if(isNear && !bossWarningGiven){ document.getElementById('boss-warning').style.display='block'; bossWarningGiven=true; setTimeout(()=>{ if(!bossDefeated) document.getElementById('boss-warning').style.display='none'; },3000); }
-        else if(!isNear){ document.getElementById('boss-warning').style.display='none'; bossWarningGiven=false; }
+        if(isNear && !bossWarningGiven){
+            document.getElementById('boss-warning').style.display='block';
+            bossWarningGiven=true;
+            setTimeout(()=>{ if(!bossDefeated) document.getElementById('boss-warning').style.display='none'; },3000);
+        }
+        else if(!isNear){
+            document.getElementById('boss-warning').style.display='none';
+            bossWarningGiven=false;
+        }
         return false;
     }
+    
     function togglePause() { if(!isGameOver){ isPaused=!isPaused; document.getElementById('pause-menu').style.display=isPaused?'flex':'none'; } }
-    function createParticles(x,y,color,count=8,speed=4){ for(let i=0;i<count;i++) particles.push({x,y, vx:(Math.random()-0.5)*speed, vy:(Math.random()-0.5)*speed, life:1, color, size:Math.random()*4+2}); }
+    
+    function createParticles(x,y,color,count=8,speed=4){
+        if(particles.length >= MAX_PARTICLES) return;
+        const actualCount = Math.min(count, MAX_PARTICLES - particles.length);
+        for(let i=0;i<actualCount;i++) {
+            particles.push({
+                x, y,
+                vx:(Math.random()-0.5)*speed,
+                vy:(Math.random()-0.5)*speed,
+                life:1, color,
+                size:Math.random()*4+2
+            });
+        }
+    }
+    
     function spawnItem(x,y,isMimic){ if(Math.random()<0.25 && !isMimic) items.push({x,y,type:'heal',size:15}); }
+    
+    function spawnDust(x, y, amount) {
+        if(items.length >= MAX_ITEMS) return;
+        const actualAmount = Math.min(amount, MAX_ITEMS - items.length, 20);
+        for(let i = 0; i < actualAmount; i++) {
+            items.push({
+                x: x + (Math.random() - 0.5) * 30,
+                y: y + (Math.random() - 0.5) * 30,
+                type: 'dust',
+                size: 6
+            });
+        }
+    }
+    
+    function collectDust(amount) {
+        dustCount = Math.min(999, dustCount + amount);
+        updateUI();
+        updateREEquippedInfo();
+    }
+    
     function getRoomData(key) {
         if(globalRoomData[key]) return globalRoomData[key];
         let obs=[], isCarpet=false, ambientObj=[], lights=[];
@@ -485,9 +610,11 @@
         globalRoomData[key] = { obstacles:obs, isCarpet, ambientObjects:ambientObj, lightPoints:lights, isBossRoom:isBoss };
         return globalRoomData[key];
     }
+    
     function checkCollision(x,y,s,obs){ for(let o of obs) if(x < o.x+o.w && x+s > o.x && y < o.y+o.h && y+s > o.y) return true; return false; }
 
     function spawnEnemy(x, y, type, isBoss=false) {
+        if(enemies.length >= MAX_ENEMIES && !isBoss) return;
         if(isBoss && bossType) {
             const b = bossTypesMap[bossType];
             const size = Math.floor(70 * b.sizeMult);
@@ -500,17 +627,17 @@
             return;
         }
         const types = {
-            'acaro':{color:"#5d4037",size:30,speed:2.2,hp:40,flyer:false,spawner:false,mimic:false},
-            'tufo':{color:"#9e9e9e",size:45,speed:1.0,hp:80,flyer:false,spawner:false,mimic:false},
-            'esporo':{color:"#81c784",size:25,speed:2.8,hp:30,explode:true,flyer:false,spawner:false,mimic:false},
-            'esporo_mini': {color:"#81c784",size:18,speed:3.0,hp:15,explode:false,flyer:false,spawner:false,mimic:false},
-            'polen':{color:"#FFD700",size:22,speed:3.5,hp:35,flyer:true,flyHeight:0,flySpeed:0.05,flyerOffset:0},
+            'acaro':{color:"#5d4037",size:30,speed:2.2,hp:40,flyer:false},
+            'tufo':{color:"#9e9e9e",size:45,speed:1.0,hp:80,flyer:false},
+            'esporo':{color:"#81c784",size:25,speed:2.8,hp:30,explode:true,flyer:false},
+            'esporo_mini':{color:"#81c784",size:18,speed:3.0,hp:15,flyer:false},
+            'polen':{color:"#FFD700",size:22,speed:3.5,hp:35,flyer:true},
             'mofo':{color:"#8B4513",size:40,speed:0,hp:60,spawner:true,spawnTimer:0,spawnDelay:300},
             'mimic':{color:"#ff4444",size:28,speed:4,hp:50,mimic:true,revealed:false}
         };
         let t = types[type];
         let extra = {};
-        if(type==='polen') extra={flyHeight:0,flyerOffset:Math.random()*Math.PI*2};
+        if(type==='polen') extra={flyerOffset:Math.random()*Math.PI*2};
         if(type==='mofo') extra={spawnTimer:0,spawnDelay:300};
         if(type==='mimic') extra={revealed:false};
         enemies.push({...t,...extra, type, x, y, vx:0, vy:0, flash:0, slow:0});
@@ -532,11 +659,10 @@
             spawnEnemy(startX, startY, 'boss', true);
             document.getElementById('room-info').innerHTML = `⚠️ ${bossTypesMap[bossType].name} ⚠️`;
             document.getElementById('room-info').style.color = "#f44";
-            createParticles(canvas.width/2,canvas.height/2,"#f00",50,10);
+            createParticles(canvas.width/2,canvas.height/2,"#f00",20,5);
         }
         else if(posKey!=="0,0" && !clearedRooms.has(posKey) && !isBossRoom) {
-            let num = 2 + Math.floor(roomsExplored/5) + Math.floor(specialUsageCount*0.5);
-            num = Math.min(num,6);
+            let num = Math.min(2 + Math.floor(roomsExplored/5) + Math.floor(specialUsageCount*0.5), 5);
             for(let i=0;i<num;i++) {
                 let ex, ey, tries=0;
                 do { ex=100+Math.random()*600; ey=100+Math.random()*400; tries++; } while(tries<50 && (Math.hypot(ex-player.x,ey-player.y)<150 || checkCollision(ex,ey,30,roomData.obstacles)));
@@ -574,7 +700,7 @@
         if(bossRoomPosition && currentPos.x===bossRoomPosition.x && currentPos.y===bossRoomPosition.y && !bossDefeated)
             document.getElementById('room-info').innerHTML = `⚠️ ${bossTypesMap[bossType].name} ⚠️`;
         else document.getElementById('room-info').innerHTML = `SALA ATUAL`;
-        document.getElementById('room-counter').innerHTML = `🚪 SALAS: ${visitedRooms.size}/${TOTAL_ROOMS}`;
+        document.getElementById('room-counter').innerHTML = `🚪 SALAS: ${visitedRooms.size}/${TOTAL_ROOMS} | ✨ ${dustCount}`;
         let fill = document.getElementById('special-fill');
         fill.style.width = (player.vacuumCharge/player.maxVacuumCharge)*100 + "%";
         fill.style.background = player.vacuumCharge>=player.maxVacuumCharge?"#F0F":"#0FF";
@@ -619,14 +745,8 @@
 
     function victory(){
         if(isGameOver) return;
-        isGameOver=true; isPaused=true;
-        ctx.fillStyle="rgba(0,0,0,0.9)"; ctx.fillRect(0,0,800,600);
-        ctx.fillStyle="gold"; ctx.textAlign="center"; ctx.font="36px Courier New";
-        ctx.fillText("VITÓRIA!",400,250);
-        ctx.font="18px Courier New";
-        ctx.fillText(`Você derrotou o ${bossTypesMap[bossType].name}!`,400,310);
-        ctx.fillText(`Salas exploradas: ${visitedRooms.size}/${TOTAL_ROOMS}`,400,350);
-        ctx.fillText("Clique para jogar novamente",400,420);
+        isGameOver = true;
+        document.getElementById('boss-warning').style.display = 'none';
     }
 
     function checkAllRoomsCleared(){
@@ -642,7 +762,7 @@
         }
     }
 
-    // ---------- Desenhos (drawBoss, drawCommonEnemy) ----------
+    // ---------- Desenhos ----------
     function drawBoss(en){
         const half = en.size/2;
         ctx.save();
@@ -685,8 +805,8 @@
             case 'esporo':
                 ctx.fillStyle = en.color; ctx.strokeStyle = en.color; ctx.lineWidth = half*0.1;
                 let spike = Math.sin(gameTime*8)*0.2;
-                for(let i=0;i<12;i++){
-                    let angle = i*Math.PI*2/12 + gameTime*0.5;
+                for(let i=0;i<8;i++){
+                    let angle = i*Math.PI*2/8 + gameTime*0.5;
                     let len = half*(0.8+spike);
                     ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(angle)*len, Math.sin(angle)*len); ctx.stroke();
                     ctx.beginPath(); ctx.arc(Math.cos(angle)*len, Math.sin(angle)*len, half*0.1, 0, 2*Math.PI); ctx.fill();
@@ -695,26 +815,21 @@
                 break;
             case 'polen':
                 ctx.fillStyle = en.color; ctx.shadowBlur=8; ctx.shadowColor="#FFD700";
-                for(let i=0;i<12;i++){
-                    let ang = i*Math.PI*2/12 + gameTime*2;
+                for(let i=0;i<8;i++){
+                    let ang = i*Math.PI*2/8 + gameTime*2;
                     let rad = half*0.6;
                     ctx.beginPath(); ctx.arc(Math.cos(ang)*rad, Math.sin(ang)*rad, half*0.2, 0, 2*Math.PI); ctx.fill();
                 }
                 ctx.beginPath(); ctx.arc(0,0, half*0.7, 0, 2*Math.PI); ctx.fill();
-                ctx.fillStyle = "rgba(255,255,200,0.3)";
-                ctx.beginPath(); ctx.ellipse(-half*0.8, -half*0.3, half*0.5, half*0.3, -0.5, 0, 2*Math.PI); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(half*0.8, -half*0.3, half*0.5, half*0.3, 0.5, 0, 2*Math.PI); ctx.fill();
                 break;
             case 'mofo':
                 ctx.fillStyle = en.color; ctx.fillRect(-half, -half, en.size, en.size);
                 ctx.fillStyle = "#654321";
-                for(let i=0;i<12;i++){
+                for(let i=0;i<8;i++){
                     let x = -half + (i%4)*(half*0.6);
                     let y = -half + Math.floor(i/4)*(half*0.6);
                     ctx.beginPath(); ctx.arc(x, y, half*0.15, 0, 2*Math.PI); ctx.fill();
                 }
-                ctx.strokeStyle = "rgba(139,69,19,0.5)"; ctx.lineWidth = half*0.1;
-                ctx.beginPath(); ctx.arc(0,0, half+5+Math.sin(gameTime*10)*2, 0, 2*Math.PI); ctx.stroke();
                 break;
         }
         ctx.restore();
@@ -726,42 +841,38 @@
         if(en.flash>0) ctx.filter="brightness(5)";
         if(en.type==='polen'){
             ctx.fillStyle = en.color; ctx.shadowBlur=8; ctx.shadowColor="#FFD700";
-            for(let i=0;i<12;i++){ let a = i*Math.PI*2/12+gameTime*2; let r=half*0.6; ctx.beginPath(); ctx.arc(Math.cos(a)*r,Math.sin(a)*r, half*0.2,0,2*Math.PI); ctx.fill(); }
+            for(let i=0;i<8;i++){ let a = i*Math.PI*2/8+gameTime*2; let r=half*0.6; ctx.beginPath(); ctx.arc(Math.cos(a)*r,Math.sin(a)*r, half*0.2,0,2*Math.PI); ctx.fill(); }
             ctx.beginPath(); ctx.arc(0,0, half*0.7,0,2*Math.PI); ctx.fill();
-            ctx.fillStyle="rgba(255,255,200,0.3)";
-            ctx.beginPath(); ctx.ellipse(-half*0.8,-half*0.3, half*0.5,half*0.3,-0.5,0,2*Math.PI); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(half*0.8,-half*0.3, half*0.5,half*0.3,0.5,0,2*Math.PI); ctx.fill();
         } else if(en.type==='mofo'){
             ctx.fillStyle=en.color; ctx.fillRect(-half,-half,en.size,en.size);
             ctx.fillStyle="#654321";
-            for(let i=0;i<8;i++){ let x=-half+(i%4)*(half*0.8), y=-half+Math.floor(i/4)*(half*0.8); ctx.beginPath(); ctx.arc(x,y, half*0.2,0,2*Math.PI); ctx.fill(); }
-            ctx.strokeStyle="rgba(139,69,19,0.5)"; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0, half+5+Math.sin(gameTime*10)*2,0,2*Math.PI); ctx.stroke();
+            for(let i=0;i<6;i++){ let x=-half+(i%3)*(half*0.8), y=-half+Math.floor(i/3)*(half*0.8); ctx.beginPath(); ctx.arc(x,y, half*0.2,0,2*Math.PI); ctx.fill(); }
         } else if(en.type==='mimic'){
             ctx.fillStyle="#8B0000"; ctx.beginPath(); ctx.ellipse(0,0, half, half,0,0,2*Math.PI); ctx.fill();
             ctx.fillStyle="#F00"; ctx.beginPath(); ctx.ellipse(-half*0.3,-half*0.2, half*0.2,half*0.3,0,0,2*Math.PI); ctx.fill();
             ctx.beginPath(); ctx.ellipse(half*0.3,-half*0.2, half*0.2,half*0.3,0,0,2*Math.PI); ctx.fill();
             ctx.fillStyle="#FFF"; ctx.beginPath(); ctx.arc(-half*0.3,-half*0.25,2,0,2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(half*0.3,-half*0.25,2,0,2*Math.PI); ctx.fill();
-            for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(i*8,5); ctx.lineTo(i*8+4,12); ctx.lineTo(i*8-4,12); ctx.fill(); }
         } else if(en.type==='acaro'){
             ctx.strokeStyle=en.color; ctx.lineWidth=Math.max(2,en.size*0.1);
-            for(let i=0;i<8;i++){ let a=i*Math.PI/4+Math.sin(gameTime*5+i)*0.4; let legLen=half*1.2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*(legLen*0.6),Math.sin(a)*(legLen*0.6)); ctx.lineTo(Math.cos(a+0.3)*legLen,Math.sin(a+0.3)*legLen); ctx.stroke(); }
+            for(let i=0;i<6;i++){ let a=i*Math.PI/3+Math.sin(gameTime*5+i)*0.4; let legLen=half*1.2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*(legLen*0.6),Math.sin(a)*(legLen*0.6)); ctx.lineTo(Math.cos(a+0.3)*legLen,Math.sin(a+0.3)*legLen); ctx.stroke(); }
             ctx.fillStyle=en.color; ctx.beginPath(); ctx.ellipse(0,0, half*0.8, half*0.6,0,0,2*Math.PI); ctx.fill();
         } else if(en.type==='tufo'){
             ctx.fillStyle=en.color; let breath=Math.sin(gameTime*3)*0.1;
-            for(let i=0;i<6;i++){ let a=i*Math.PI*2/6; let d=half*0.5*(1+breath); let r=half*0.6; ctx.beginPath(); ctx.arc(Math.cos(a)*d,Math.sin(a)*d, r,0,2*Math.PI); ctx.fill(); }
+            for(let i=0;i<5;i++){ let a=i*Math.PI*2/5; let d=half*0.5*(1+breath); let r=half*0.5; ctx.beginPath(); ctx.arc(Math.cos(a)*d,Math.sin(a)*d, r,0,2*Math.PI); ctx.fill(); }
             ctx.beginPath(); ctx.arc(0,0, half*0.7,0,2*Math.PI); ctx.fill();
         } else if(en.type==='esporo' || en.type==='esporo_mini'){
             ctx.fillStyle=en.color; ctx.strokeStyle=en.color; ctx.lineWidth=2;
             let spike=Math.sin(gameTime*8)*0.2;
-            for(let i=0;i<8;i++){ let a=i*Math.PI*2/8+gameTime*0.5; let len=half*(0.8+spike); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len); ctx.stroke(); ctx.beginPath(); ctx.arc(Math.cos(a)*len,Math.sin(a)*len, half*0.15,0,2*Math.PI); ctx.fill(); }
+            for(let i=0;i<6;i++){ let a=i*Math.PI*2/6+gameTime*0.5; let len=half*(0.8+spike); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len); ctx.stroke(); }
             ctx.beginPath(); ctx.arc(0,0, half*0.5,0,2*Math.PI); ctx.fill();
         }
         ctx.restore();
     }
 
-    // ---------- LOOP PRINCIPAL OTIMIZADO (update) ----------
+    // ---------- LOOP PRINCIPAL OTIMIZADO ----------
     function update() {
         if(isGameOver || isPaused) return;
+        frameCount++;
         gameTime+=0.05; if(shakeTime>0) shakeTime--;
 
         player.isMoving = keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD'];
@@ -781,25 +892,59 @@
         if(!checkCollision(player.x, fy, player.size, roomData.obstacles)) player.y = Math.max(0,Math.min(600-player.size,fy));
         if(!checkCollision(fx, player.y, player.size, roomData.obstacles)) player.x = Math.max(0,Math.min(800-player.size,fx));
 
-        for(let i=0;i<powerUpItems.length;i++){
+        // Coleta power-ups
+        for(let i=powerUpItems.length-1;i>=0;i--){
             let pu=powerUpItems[i];
             let dx=player.x+14-pu.x, dy=player.y+14-pu.y;
             if(dx*dx+dy*dy<900){
-                collectPowerUp(pu); createParticles(pu.x,pu.y,"#FFD700",15,4);
-                powerUpItems.splice(i,1); i--;
+                collectPowerUp(pu); createParticles(pu.x,pu.y,"#FFD700",8,3);
+                powerUpItems.splice(i,1);
             }
         }
-        for(let i=0;i<items.length;i++){
+        
+        // Coleta itens
+        for(let i=items.length-1;i>=0;i--){
             let it=items[i];
             let dx=player.x+14-it.x, dy=player.y+14-it.y;
+            if(it.type === 'dust' && isItemEquipped('magnet')) {
+                let dist = Math.sqrt(dx*dx+dy*dy);
+                if(dist < 200) {
+                    let angle = Math.atan2(dy, dx);
+                    it.x += Math.cos(angle) * 1.5;
+                    it.y += Math.sin(angle) * 1.5;
+                }
+            }
             if(dx*dx+dy*dy<900){
-                if(it.isMimic && !it.revealed){ createParticles(it.x,it.y,"#f00",20,5); spawnEnemy(it.x,it.y,'mimic',false); items.splice(i,1); i--; }
-                else if(!it.isMimic){ player.hp=Math.min(player.maxHp,player.hp+2); updateUI(); createParticles(it.x,it.y,"#f44",10); items.splice(i,1); i--; }
+                if(it.type === 'dust') {
+                    collectDust(1);
+                    items.splice(i,1);
+                } else if(it.isMimic && !it.revealed){ 
+                    spawnEnemy(it.x,it.y,'mimic',false); 
+                    items.splice(i,1);
+                }
+                else if(!it.isMimic){ 
+                    player.hp=Math.min(player.maxHp,player.hp+2); 
+                    updateUI(); 
+                    items.splice(i,1);
+                }
             }
         }
-        for(let i=0;i<particles.length;i++){ let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life-=0.02; if(p.life<=0){ particles.splice(i,1); i--; } }
+        
+        // Limpeza periódica de partículas
+        if(frameCount % 30 === 0 && particles.length > MAX_PARTICLES * 0.7) {
+            particles = particles.filter(p => p.life > 0.3);
+        }
+
+        for(let i=particles.length-1;i>=0;i--){ 
+            let p=particles[i]; 
+            p.x+=p.vx; p.y+=p.vy; 
+            p.life-=0.02; 
+            if(p.life<=0) particles.splice(i,1); 
+        }
+        
         if(isItemEquipped('magnet') && Math.random()<0.02) player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+1);
 
+        // Ventiladores
         for(let obj of ambientObjects){
             if(obj.type==='fan'){
                 if(obj.cooldown>0) obj.cooldown--;
@@ -816,6 +961,7 @@
             }
         }
 
+        // Lâminas
         if(isItemEquipped('blades')){
             bladesTimer++;
             if(bladesTimer>10){
@@ -823,24 +969,27 @@
                 for(let en of enemies){
                     let dx=player.x+14-(en.x+en.size/2), dy=player.y+14-(en.y+en.size/2);
                     if(dx*dx+dy*dy<4900){
-                        en.hp-=3; en.flash=2; createParticles(en.x+en.size/2, en.y+en.size/2,"#0FF",2);
+                        en.hp-=3; en.flash=2;
+                        if(particles.length < MAX_PARTICLES) createParticles(en.x+en.size/2, en.y+en.size/2,"#0FF",1);
                     }
                 }
             }
         }
 
-        for(let i=0;i<bossTraps.length;i++){
+        // Armadilhas do boss
+        for(let i=bossTraps.length-1;i>=0;i--){
             let t=bossTraps[i];
             t.life--;
-            if(t.life<=0){ bossTraps.splice(i,1); i--; continue; }
+            if(t.life<=0){ bossTraps.splice(i,1); continue; }
             let dx=player.x+14-t.x, dy=player.y+14-t.y;
             if(dx*dx+dy*dy<625 && !player.invincible){
                 player.hp--; updateUI(); player.invincible=true; shakeTime=10;
                 setTimeout(()=>player.invincible=false,500);
-                createParticles(t.x,t.y,"#f60",10);
+                if(particles.length < MAX_PARTICLES) createParticles(t.x,t.y,"#f60",5);
             }
         }
 
+        // Atualizar inimigos
         for(let en of enemies){
             const enCX = en.x+en.size/2, enCY = en.y+en.size/2;
             let dxp = player.x+14-enCX, dyp = player.y+14-enCY;
@@ -851,76 +1000,74 @@
 
             if(en.isBoss){
                 let ang = Math.atan2(dyp, dxp);
-                let newX = en.x + Math.cos(ang)*eSpeed;
-                let newY = en.y + Math.sin(ang)*eSpeed;
-                newX = Math.max(10, Math.min(canvas.width-en.size-10, newX));
-                newY = Math.max(10, Math.min(canvas.height-en.size-10, newY));
-                en.x = newX; en.y = newY;
+                en.x += Math.cos(ang)*eSpeed;
+                en.y += Math.sin(ang)*eSpeed;
+                en.x = Math.max(10, Math.min(canvas.width-en.size-10, en.x));
+                en.y = Math.max(10, Math.min(canvas.height-en.size-10, en.y));
                 if(en.attackTimer<=0){
                     en.attackTimer = 120;
                     switch(en.special){
                         case 'dash':
                             let a2 = Math.atan2(dyp, dxp);
-                            let dashX = en.x + Math.cos(a2)*150;
-                            let dashY = en.y + Math.sin(a2)*150;
-                            dashX = Math.max(10, Math.min(canvas.width-en.size-10, dashX));
-                            dashY = Math.max(10, Math.min(canvas.height-en.size-10, dashY));
-                            en.x = dashX; en.y = dashY;
-                            createParticles(enCX,enCY,"#fa0",20,8);
+                            en.x = Math.max(10, Math.min(canvas.width-en.size-10, en.x + Math.cos(a2)*150));
+                            en.y = Math.max(10, Math.min(canvas.height-en.size-10, en.y + Math.sin(a2)*150));
                             shakeTime=10;
                             break;
                         case 'spawnMinions':
-                            for(let i=0;i<3;i++){
-                                let ang = Math.random()*2*Math.PI;
-                                let sx = enCX+Math.cos(ang)*60, sy = enCY+Math.sin(ang)*60;
-                                spawnEnemy(sx-15, sy-15, 'tufo', false);
+                            if(enemies.length < MAX_ENEMIES) {
+                                for(let i=0;i<2;i++){
+                                    let ang = Math.random()*2*Math.PI;
+                                    spawnEnemy(enCX+Math.cos(ang)*60, enCY+Math.sin(ang)*60, 'tufo', false);
+                                }
                             }
                             break;
                         case 'explosiveShots':
-                            for(let i=0;i<5;i++){
-                                let ang = Math.random()*2*Math.PI;
-                                enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*6, vy:Math.sin(ang)*6, explosive:true});
+                            if(enemyBullets.length < MAX_ENEMY_BULLETS) {
+                                for(let i=0;i<3;i++){
+                                    let ang = Math.random()*2*Math.PI;
+                                    enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*6, vy:Math.sin(ang)*6, explosive:true});
+                                }
                             }
                             break;
                         case 'spiralShots':
-                            for(let i=0;i<12;i++){
-                                let ang = i*Math.PI*2/12 + gameTime*2;
-                                let sp = 5;
-                                enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp});
+                            if(enemyBullets.length < MAX_ENEMY_BULLETS) {
+                                for(let i=0;i<6;i++){
+                                    let ang = i*Math.PI*2/6 + gameTime*2;
+                                    enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*5, vy:Math.sin(ang)*5});
+                                }
                             }
                             break;
                         case 'spawnMobs':
-                            for(let i=0;i<4;i++){
-                                let ang = Math.random()*2*Math.PI;
-                                let sx = enCX+Math.cos(ang)*50, sy = enCY+Math.sin(ang)*50;
-                                spawnEnemy(sx-12, sy-12, 'esporo', false);
+                            if(enemies.length < MAX_ENEMIES) {
+                                for(let i=0;i<2;i++){
+                                    let ang = Math.random()*2*Math.PI;
+                                    spawnEnemy(enCX+Math.cos(ang)*50, enCY+Math.sin(ang)*50, 'esporo', false);
+                                }
                             }
                             break;
                     }
                 } else en.attackTimer--;
                 en.trapCooldown--;
-                if(en.trapCooldown<=0 && Math.random()<0.02){
+                if(en.trapCooldown<=0 && Math.random()<0.01 && bossTraps.length < MAX_BOSS_TRAPS){
                     en.trapCooldown=180;
-                    for(let i=0;i<3;i++){
+                    let trapCount = Math.min(2, MAX_BOSS_TRAPS - bossTraps.length);
+                    for(let i=0;i<trapCount;i++){
                         let ang = Math.random()*2*Math.PI, rad = 80+Math.random()*60;
                         bossTraps.push({x:enCX+Math.cos(ang)*rad, y:enCY+Math.sin(ang)*rad, life:90, radius:20});
                     }
-                    createParticles(enCX,enCY,"#f60",20,5); shakeTime=15;
                 }
             } else {
                 if(en.flyer){
                     let ang = Math.atan2(dyp, dxp);
                     en.x += Math.cos(ang)*eSpeed; en.y += Math.sin(ang)*eSpeed;
-                } else if(en.spawner){
+                } else if(en.spawner && enemies.length < MAX_ENEMIES){
                     en.spawnTimer++;
                     if(en.spawnTimer>=en.spawnDelay){
                         en.spawnTimer=0;
-                        for(let i=0;i<3;i++){
-                            let a = i*Math.PI*2/3;
-                            let sx = en.x+en.size/2+Math.cos(a)*40, sy = en.y+en.size/2+Math.sin(a)*40;
-                            spawnEnemy(sx-9, sy-9, 'esporo_mini', false);
+                        for(let i=0;i<2;i++){
+                            let a = i*Math.PI;
+                            spawnEnemy(en.x+en.size/2+Math.cos(a)*40, en.y+en.size/2+Math.sin(a)*40, 'esporo_mini', false);
                         }
-                        createParticles(en.x+en.size/2, en.y+en.size/2, "#8B4513",15);
                     }
                 } else if(!en.mimic){
                     let ang = Math.atan2(dyp, dxp);
@@ -948,86 +1095,74 @@
             }
         }
 
-        if(keys['MouseDown'] && Date.now()-player.lastShot > player.shotDelay){
+        // Tiro
+        if(keys['MouseDown'] && Date.now()-player.lastShot > player.shotDelay && bullets.length < MAX_BULLETS){
             let a = Math.atan2(mouse.y-(player.y+14), mouse.x-(player.x+14));
             bullets.push({x:player.x+14, y:player.y+14, vx:Math.cos(a)*12, vy:Math.sin(a)*12, hitEnemy:false});
             player.lastShot = Date.now();
         }
-        for(let i=0;i<bullets.length;i++){
+        for(let i=bullets.length-1;i>=0;i--){
             let b=bullets[i];
             b.x+=b.vx; b.y+=b.vy;
-            let hit = checkCollision(b.x,b.y,4,roomData.obstacles);
-            for(let obj of ambientObjects){
-                if(obj.type==='fan' && obj.cooldown===0 && (b.x-obj.x)*(b.x-obj.x)+(b.y-obj.y)*(b.y-obj.y)<225){
-                    obj.active=true; obj.cooldown=180; createParticles(obj.x,obj.y,"#0FF",10); hit=true;
-                }
-            }
-            for(let en of enemies){
-                let dx=b.x-(en.x+en.size/2), dy=b.y-(en.y+en.size/2);
-                if(dx*dx+dy*dy < (en.size/2)*(en.size/2)){
-                    en.hp-=10; en.flash=2; hit=true; b.hitEnemy=true;
-                    if(isItemEquipped('freeze')) en.slow=60;
-                    createParticles(b.x,b.y,en.color,3,2);
-                    if(isItemEquipped('splash')){
-                        for(let other of enemies){
-                            if(other===en) continue;
-                            let odx=b.x-(other.x+other.size/2), ody=b.y-(other.y+other.size/2);
-                            if(odx*odx+ody*ody<3600){
-                                other.hp-=5; other.flash=2; createParticles(b.x,b.y,"#ff0",5,3);
+            let hit = checkCollision(b.x,b.y,4,roomData.obstacles) || b.x<0 || b.x>800 || b.y<0 || b.y>600;
+            if(!hit){
+                for(let en of enemies){
+                    let dx=b.x-(en.x+en.size/2), dy=b.y-(en.y+en.size/2);
+                    if(dx*dx+dy*dy < (en.size/2)*(en.size/2)){
+                        en.hp-=10; en.flash=2; hit=true; b.hitEnemy=true;
+                        if(isItemEquipped('freeze')) en.slow=60;
+                        if(isItemEquipped('splash')){
+                            for(let other of enemies){
+                                if(other===en) continue;
+                                let odx=b.x-(other.x+other.size/2), ody=b.y-(other.y+other.size/2);
+                                if(odx*odx+ody*ody<3600){ other.hp-=5; other.flash=2; }
                             }
                         }
+                        break;
                     }
-                    break;
                 }
             }
             if(b.hitEnemy){ player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+5); updateUI(); }
-            if(hit || b.x<0 || b.x>800 || b.y<0 || b.y>600){ bullets.splice(i,1); i--; }
+            if(hit) bullets.splice(i,1);
         }
         updateRoomba();
 
-        for(let i=0;i<enemyBullets.length;i++){
+        // Enemy bullets
+        for(let i=enemyBullets.length-1;i>=0;i--){
             let eb=enemyBullets[i];
             eb.x+=eb.vx; eb.y+=eb.vy;
-            if(isItemEquipped('shield') && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<625){
+            if(isItemEquipped('shield') && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<625 && enemyBullets.length < MAX_ENEMY_BULLETS){
                 let ang = Math.atan2(eb.y-(player.y+14), eb.x-(player.x+14));
                 enemyBullets.push({x:player.x+14, y:player.y+14, vx:Math.cos(ang+Math.PI)*8, vy:Math.sin(ang+Math.PI)*8});
-                createParticles(eb.x,eb.y,"#0FF",5);
-                enemyBullets.splice(i,1); i--;
+                enemyBullets.splice(i,1);
                 continue;
             }
             if((eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<225 && !player.invincible){
                 player.hp--; updateUI(); player.invincible=true; shakeTime=15;
-                let ka = Math.atan2(player.y+14-eb.y, player.x+14-eb.x);
-                player.vx=Math.cos(ka)*10; player.vy=Math.sin(ka)*10;
                 if(player.hp<=0){ isGameOver=true; isPaused=true; }
                 setTimeout(()=>player.invincible=false,1000);
-                if(eb.explosive){
-                    for(let e of enemies){
-                        let dx=e.x+e.size/2-eb.x, dy=e.y+e.size/2-eb.y;
-                        if(dx*dx+dy*dy<3600){ e.hp-=20; e.flash=2; }
-                    }
-                    createParticles(eb.x,eb.y,"#f80",20,6);
-                }
-                enemyBullets.splice(i,1); i--;
+                enemyBullets.splice(i,1);
             } else if(eb.x<0 || eb.x>800 || eb.y<0 || eb.y>600){
-                enemyBullets.splice(i,1); i--;
+                enemyBullets.splice(i,1);
             }
         }
 
-        for(let i=0;i<enemies.length;i++){
+        // Remover inimigos mortos
+        for(let i=enemies.length-1;i>=0;i--){
             let en=enemies[i];
             if(en.hp<=0){
-                createParticles(en.x+en.size/2, en.y+en.size/2, en.color, en.isBoss?80:15, en.isBoss?10:5);
-                if(en.explode) for(let j=0;j<4;j++) enemyBullets.push({x:en.x+en.size/2,y:en.y+en.size/2,vx:Math.cos(j*Math.PI/2)*4,vy:Math.sin(j*Math.PI/2)*4});
+                let dustAmount = en.isBoss ? 30 : (en.type === 'mofo' ? 5 : 2);
+                spawnDust(en.x + en.size/2, en.y + en.size/2, dustAmount);
+                if(en.explode && enemyBullets.length < MAX_ENEMY_BULLETS) {
+                    for(let j=0;j<2;j++) enemyBullets.push({x:en.x+en.size/2,y:en.y+en.size/2,vx:Math.cos(j*Math.PI)*4,vy:Math.sin(j*Math.PI)*4});
+                }
                 spawnItem(en.x+en.size/2, en.y+en.size/2, en.mimic);
                 totalKills++; updateKillCounter(); updateUI();
                 if(en.isBoss){
                     bossDefeated=true; clearedRooms.add(`${currentPos.x},${currentPos.y}`);
-                    document.getElementById('boss-warning').style.display='none';
-                    createParticles(canvas.width/2,canvas.height/2,"#fa0",100,15);
                     victory();
                 }
-                enemies.splice(i,1); i--;
+                enemies.splice(i,1);
             }
         }
 
@@ -1041,9 +1176,9 @@
             for(let d of doors){
                 if(player.x < d.x+d.w && player.x+player.size > d.x && player.y < d.y+d.h && player.y+player.size > d.y){
                     if(d.dir==='top') currentPos.y--;
-                    if(d.dir==='bottom') currentPos.y++;
-                    if(d.dir==='left') currentPos.x--;
-                    if(d.dir==='right') currentPos.x++;
+                    else if(d.dir==='bottom') currentPos.y++;
+                    else if(d.dir==='left') currentPos.x--;
+                    else if(d.dir==='right') currentPos.x++;
                     let nk = `${currentPos.x},${currentPos.y}`;
                     if(!visitedRooms.has(nk)) visitedRooms.add(nk);
                     generateRoom(d.dir);
@@ -1053,7 +1188,6 @@
         }
     }
 
-    // ---------- Draw principal ----------
     function draw() {
         ctx.clearRect(0,0,800,600);
         ctx.save();
@@ -1084,24 +1218,22 @@
         bossTraps.forEach(t=>{
             ctx.fillStyle=`rgba(255,102,0,${0.3+Math.sin(gameTime*20)*0.2})`; ctx.beginPath(); ctx.arc(t.x,t.y,t.radius,0,2*Math.PI); ctx.fill();
             ctx.fillStyle="#f60"; ctx.beginPath(); ctx.arc(t.x,t.y,t.radius-5,0,2*Math.PI); ctx.fill();
-            ctx.fillStyle="#fff"; ctx.font="12px Arial"; ctx.fillText("⚠️",t.x-6,t.y+5);
         });
         powerUpItems.forEach(pu=>{
             let p=availablePowerUps[pu.powerUpId]; ctx.fillStyle="#FFD700"; ctx.beginPath(); ctx.arc(pu.x,pu.y,12,0,2*Math.PI); ctx.fill();
             ctx.fillStyle="#000"; ctx.font="16px Arial"; ctx.fillText(p.name.charAt(0),pu.x-6,pu.y+6);
-            ctx.fillStyle="#FFF"; ctx.font="10px Arial"; ctx.fillText("?",pu.x-2,pu.y+4);
         });
         items.forEach(it=>{
-            if(it.isMimic && !it.revealed){ ctx.fillStyle="#f44"; ctx.font="20px Arial"; ctx.fillText("❤️",it.x-10,it.y+10);
-            ctx.fillStyle=`rgba(255,0,0,${0.2+Math.sin(gameTime*10)*0.1})`; ctx.beginPath(); ctx.arc(it.x,it.y,15,0,2*Math.PI); ctx.fill(); }
-            else if(!it.isMimic){ ctx.fillStyle="#f44"; ctx.font="20px Arial"; ctx.fillText("❤️",it.x-10,it.y+10); }
+            if(it.type === 'dust') {
+                ctx.fillStyle = "#FFD700";
+                ctx.beginPath(); ctx.arc(it.x, it.y, 3, 0, 2*Math.PI); ctx.fill();
+            } else if(!it.isMimic){ ctx.fillStyle="#f44"; ctx.font="20px Arial"; ctx.fillText("❤️",it.x-10,it.y+10); }
         });
         particles.forEach(p=>{ ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,p.size,p.size); }); ctx.globalAlpha=1;
         ctx.fillStyle="rgba(255,255,200,0.1)"; ambientDust.forEach(d=>{ ctx.fillRect(d.x,d.y,d.s,d.s); });
         enemies.forEach(en=>{ if(en.isBoss) drawBoss(en); else drawCommonEnemy(en); });
         drawRoomba();
 
-        // Jogador
         if(!player.invincible || Math.floor(gameTime*10)%2===0){
             ctx.save(); let bob=Math.sin(player.walkCycle)*4, tilt=Math.cos(player.walkCycle)*0.08;
             ctx.translate(player.x+player.size/2, player.y+player.size/2); ctx.rotate(tilt);
@@ -1121,12 +1253,11 @@
         }
         ctx.fillStyle="#FF0"; bullets.forEach(b=>ctx.fillRect(b.x-2,b.y-2,4,4));
         ctx.fillStyle="magenta"; enemyBullets.forEach(eb=>{ ctx.beginPath(); ctx.arc(eb.x,eb.y,5,0,2*Math.PI); ctx.fill(); });
-        if(enemies.length>0 && enemies[0].isBoss){
+        if(enemies.length>0 && enemies[0] && enemies[0].isBoss){
             ctx.fillStyle="#300"; ctx.fillRect(100,20,600,20);
             let perc = enemies[0].hp/enemies[0].maxHp;
             ctx.fillStyle="red"; ctx.fillRect(100,20,perc*600,20);
             ctx.fillStyle="white"; ctx.font="bold 14px Courier New"; ctx.fillText(`${bossTypesMap[enemies[0].baseType].name} - ${Math.floor(enemies[0].hp)}/${enemies[0].maxHp}`,350,18);
-            ctx.font="10px Courier New"; ctx.fillStyle="#FFD700"; ctx.fillText("⚠️ CUIDADO COM AS ARMADILHAS NO CHÃO ⚠️",300,55);
         }
         let grad = ctx.createRadialGradient(player.x+14,player.y+14,50,player.x+14,player.y+14,300);
         grad.addColorStop(0,"rgba(0,0,0,0)"); grad.addColorStop(0.5,"rgba(0,0,0,0.15)"); grad.addColorStop(1,"rgba(0,0,0,0.5)");
@@ -1138,6 +1269,7 @@
                 ctx.font="40px Courier New"; ctx.fillText("VITÓRIA!",400,250);
                 ctx.font="20px Courier New"; ctx.fillText(`Você derrotou o ${bossTypesMap[bossType].name}!`,400,310);
                 ctx.fillText(`Salas exploradas: ${visitedRooms.size}/${TOTAL_ROOMS}`,400,350);
+                ctx.fillText(`✨ Pó coletado: ${dustCount}`, 400, 380);
             } else {
                 ctx.font="40px Courier New"; ctx.fillText("DERROTA!",400,280);
                 ctx.font="20px Courier New"; ctx.fillText("O pó te venceu...",400,340);
@@ -1156,22 +1288,23 @@
     bossType = escolherBossAleatorio();
     generateRoom();
     setupREInventoryEvents();
+    if ('ontouchstart' in window) initMobileControls();
     loop();
 
     // Eventos
     window.onkeydown = (e)=>{
         keys[e.code]=true;
         if(e.code==='Escape') togglePause();
-        if(e.code==='KeyI'){ e.preventDefault(); if(isPaused && document.getElementById('inventory-menu').style.display==='flex') closeInventory(); else if(!isPaused && !isGameOver) openInventory(); }
         if(e.code==='Tab'){ e.preventDefault(); toggleREInventory(); }
+        if(e.code==='KeyQ') { e.preventDefault(); }
         if(e.code==='Space' && player.vacuumCharge>=player.maxVacuumCharge && !isSuperVacuumActive && !isGameOver && !isPaused){
-            e.preventDefault(); isSuperVacuumActive=true; player.vacuumCharge=0; specialUsageCount++; superVacuumTimer=180; shakeTime=20; updateUI(); createParticles(player.x+14,player.y+14,"#F0F",30,8);
+            e.preventDefault(); isSuperVacuumActive=true; player.vacuumCharge=0; specialUsageCount++; superVacuumTimer=180; shakeTime=20; updateUI(); createParticles(player.x+14,player.y+14,"#F0F",15,4);
         }
         if(e.code==='ShiftLeft' && isItemEquipped('dash') && Date.now()-lastDashTime>1000 && !isPaused && !isGameOver){
             e.preventDefault(); lastDashTime=Date.now(); let dd=100;
             if(keys['KeyW']) player.y-=dd; if(keys['KeyS']) player.y+=dd; if(keys['KeyA']) player.x-=dd; if(keys['KeyD']) player.x+=dd;
             player.x=Math.max(0,Math.min(800-player.size,player.x)); player.y=Math.max(0,Math.min(600-player.size,player.y));
-            createParticles(player.x+14,player.y+14,"#0FF",20,5); player.invincible=true; setTimeout(()=>player.invincible=false,300);
+            createParticles(player.x+14,player.y+14,"#0FF",10,3); player.invincible=true; setTimeout(()=>player.invincible=false,300);
         }
     };
     window.onkeyup = (e)=>keys[e.code]=false;
@@ -1179,9 +1312,8 @@
     window.onmousedown = (e)=>{ if(isGameOver) location.reload(); if(e.button===0) keys['MouseDown']=true; };
     window.onmouseup = (e)=>keys['MouseDown']=false;
 
-    // Expor funções globais necessárias no HTML
     window.togglePause = togglePause;
     window.closeInventory = closeInventory;
     window.toggleREInventory = toggleREInventory;
-
-})();
+    window.openInventory = toggleREInventory;
+})();   

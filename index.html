@@ -2,23 +2,21 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
     <title>Cavaleiro Tufo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- PAUSE MENU -->
     <div id="pause-menu" class="menu-overlay">
         <h1 style="color: #00FFFF;">PAUSADO</h1>
         <button class="btn-ui" onclick="togglePause()">CONTINUAR (ESC)</button>
     </div>
-    
-    <!-- INVENTÁRIO ANTIGO (pode manter ou remover depois) -->
-    <div id="inventory-menu" class="menu-overlay" style="background: rgba(0,0,0,0.95);">
-        <h2 style="color:#00FFFF;">🎒 INVENTÁRIO - ESCOLHA ATÉ 3 ITENS</h2>
-        <div id="inventory-slots"></div>
-        <button class="btn-ui" style="margin-top:20px;" onclick="closeInventory()">FECHAR (I)</button>
-    </div>
-    
+
+    <!-- UI SUPERIOR ESQUERDA -->
     <div class="ui">
         <div id="hearts" style="font-size:30px;">❤️❤️❤️</div>
         <div id="room-info" style="font-size:16px; color:#0FF;">SALA</div>
@@ -26,18 +24,24 @@
         <div class="special-bar-container"><div id="special-fill"></div></div>
         <div id="equipped-item" style="font-size:10px; color:#FFD700;"></div>
     </div>
-    
+
+    <!-- MINIMAPA -->
     <div id="minimap-container"><canvas id="miniMap" width="140" height="140"></canvas></div>
-    <div class="kill-counter" id="kill-counter">💀 INIMIGOS: 0</div>
-    <div class="build-counter" id="build-counter">⚔️ ITENS: 0/3</div>
-    <div class="room-counter" id="room-counter">🚪 SALAS: 0/0</div>
-    <div class="inventory-hint">📦 INVENTÁRIO: TAB</div> <!-- Mudei para TAB -->
-    
-    <!-- ========== NOVO: INVENTÁRIO ESTILO RESIDENT EVIL ========== -->
+
+    <!-- BOSS WARNING -->
+    <div id="boss-warning" class="boss-warning"> *$ BOSS APROXIMA! $*</div>
+
+    <!-- CONTADORES -->
+    <div class="kill-counter" id="kill-counter"> INIMIGOS: 0</div>
+    <div class="build-counter" id="build-counter"> ITENS: 0/3</div>
+    <div class="room-counter" id="room-counter"> SALAS: 0/0</div>
+    <div class="inventory-hint"> INVENTÁRIO: TAB</div>
+
+    <!-- INVENTÁRIO ESTILO RESIDENT EVIL (MALETA) -->
     <div id="re-inventory" class="re-inventory-overlay">
         <div class="re-inventory-container">
             <div class="re-inventory-header">
-                <h2>🎒 MALETA DE ITENS</h2>
+                <h2>* MALETA DE ITENS</h2>
                 <span class="re-inventory-close" onclick="toggleREInventory()">✕</span>
             </div>
             <div class="re-grid-container">
@@ -45,13 +49,25 @@
             </div>
             <div class="re-inventory-info">
                 <span id="re-equipped-info">⚔️ Equipados: 0/3</span>
-                <span class="re-hint">🖱️ Clique duplo = equipar | Arraste = mover</span>
+                <span class="re-hint">🖱️ Clique para equipar | Arraste para mover</span>
             </div>
             <button class="btn-ui" onclick="toggleREInventory()">FECHAR (TAB)</button>
         </div>
     </div>
-    <!-- ========== FIM DO INVENTÁRIO RE ========== -->
-    
+
+    <!-- CONTROLES MOBILE -->
+    <div class="mobile-controls">
+        <div class="joystick-area" id="joystickArea">
+            <div class="joystick-thumb" id="joystickThumb"></div>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" id="shootBtn">🔫</button>
+            <button class="action-btn" id="vacuumBtn">💨</button>
+            <button class="action-btn" id="dashBtn">⚡</button>
+            <button class="action-btn" id="inventoryBtn">📦</button>
+        </div>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
 
     <script src="script.js"></script>

@@ -1,3 +1,4 @@
+/* ========== ESTILOS BASE ========== */
 body {
     margin: 0;
     background: #0a0a0a;
@@ -9,12 +10,15 @@ body {
     font-family: 'Courier New', Courier, monospace;
     cursor: crosshair;
 }
+
 canvas {
     border: 5px solid #444;
     background: #1a1a1a;
     display: block;
     box-shadow: 0 0 30px rgba(0,255,255,0.2);
 }
+
+/* ========== UI PRINCIPAL ========== */
 .ui {
     position: absolute;
     top: 15px;
@@ -29,6 +33,7 @@ canvas {
     border: 1px solid #333;
     min-width: 200px;
 }
+
 .special-bar-container {
     width: 180px;
     height: 14px;
@@ -38,12 +43,15 @@ canvas {
     border-radius: 10px;
     overflow: hidden;
 }
+
 #special-fill {
     width: 0%;
     height: 100%;
     background: #00FFFF;
     transition: width 0.2s;
 }
+
+/* ========== MENUS OVERLAY ========== */
 .menu-overlay {
     position: absolute;
     width: 100%;
@@ -57,6 +65,7 @@ canvas {
     z-index: 100;
     text-align: center;
 }
+
 #inventory-menu {
     position: absolute;
     bottom: 100px;
@@ -71,6 +80,7 @@ canvas {
     min-width: 500px;
     pointer-events: auto;
 }
+
 .inventory-slot {
     background: #222;
     border: 1px solid #444;
@@ -83,16 +93,19 @@ canvas {
     width: 140px;
     text-align: center;
 }
+
 .inventory-slot:hover {
     background: #00FFFF;
     color: black;
     transform: scale(1.05);
 }
+
 .inventory-slot.equipped {
     border: 2px solid #FFD700;
     background: #333;
     box-shadow: 0 0 10px gold;
 }
+
 .btn-ui {
     background: #222;
     border: 2px solid #00FFFF;
@@ -104,11 +117,14 @@ canvas {
     transition: 0.2s;
     margin-top: 20px;
 }
+
 .btn-ui:hover {
     background: #00FFFF;
     color: black;
     box-shadow: 0 0 15px #00FFFF;
 }
+
+/* ========== MINIMAPA ========== */
 #minimap-container {
     position: absolute;
     top: 15px;
@@ -119,6 +135,8 @@ canvas {
     border-radius: 4px;
     z-index: 10;
 }
+
+/* ========== AVISO DE BOSS ========== */
 .boss-warning {
     position: absolute;
     top: 80px;
@@ -133,11 +151,14 @@ canvas {
     pointer-events: none;
     z-index: 10;
 }
+
 @keyframes pulse {
     0% { opacity: 0.5; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.1); }
     100% { opacity: 0.5; transform: scale(1); }
 }
+
+/* ========== CONTADORES ========== */
 .kill-counter {
     position: absolute;
     bottom: 15px;
@@ -152,6 +173,35 @@ canvas {
     pointer-events: none;
     z-index: 10;
 }
+
+.build-counter {
+    position: absolute;
+    top: 15px;
+    left: 200px;
+    background: rgba(0,0,0,0.7);
+    color: #FFD700;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.room-counter {
+    position: absolute;
+    top: 15px;
+    left: 380px;
+    background: rgba(0,0,0,0.7);
+    color: #00FFAA;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    pointer-events: none;
+    z-index: 10;
+}
+
 .inventory-hint {
     position: absolute;
     bottom: 15px;
@@ -165,6 +215,8 @@ canvas {
     pointer-events: none;
     z-index: 10;
 }
+
+/* ========== NOTIFICAÇÕES ========== */
 .item-notification {
     position: absolute;
     top: 50%;
@@ -182,38 +234,14 @@ canvas {
     animation: fadeOut 2s forwards;
     white-space: nowrap;
 }
+
 @keyframes fadeOut {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     70% { opacity: 1; }
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); display: none; }
 }
-.build-counter {
-    position: absolute;
-    top: 15px;
-    left: 200px;
-    background: rgba(0,0,0,0.7);
-    color: #FFD700;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 11px;
-    font-family: 'Courier New', monospace;
-    pointer-events: none;
-    z-index: 10;
-}
-.room-counter {
-    position: absolute;
-    top: 15px;
-    left: 380px;
-    background: rgba(0,0,0,0.7);
-    color: #00FFAA;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 12px;
-    font-family: 'Courier New', monospace;
-    pointer-events: none;
-    z-index: 10;
-}
-/* Inventário Resident Evil */
+
+/* ========== INVENTÁRIO ESTILO RESIDENT EVIL ========== */
 .re-inventory-overlay {
     position: absolute;
     top: 0;
@@ -296,4 +324,165 @@ canvas {
 #re-equipped-info {
     color: #FFD700;
     font-weight: bold;
+}
+
+/* ========== CONTROLES MOBILE ========== */
+.mobile-controls {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 5px;
+    }
+
+    canvas {
+        width: 100vw !important;
+        height: auto !important;
+        max-height: 50vh;
+        border-width: 2px;
+    }
+
+    .mobile-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 10px 10px;
+        box-sizing: border-box;
+        position: fixed;
+        bottom: 10px;
+        left: 0;
+        z-index: 50;
+    }
+
+    .joystick-area {
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(0, 255, 255, 0.5);
+        border-radius: 50%;
+        position: relative;
+        touch-action: none;
+    }
+
+    .joystick-thumb {
+        width: 45px;
+        height: 45px;
+        background: rgba(0, 255, 255, 0.4);
+        border: 2px solid #00FFFF;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        background: rgba(0, 255, 255, 0.15);
+        border: 2px solid #00FFFF;
+        color: white;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        touch-action: manipulation;
+    }
+
+    .action-btn:active {
+        background: rgba(0, 255, 255, 0.5);
+        transform: scale(0.9);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+
+    /* Esconder elementos não essenciais no mobile */
+    #minimap-container {
+        display: none !important;
+    }
+
+    .ui {
+        font-size: 9px !important;
+        padding: 5px !important;
+        top: 5px;
+        left: 5px;
+        min-width: auto;
+        max-width: 150px;
+    }
+
+    .ui div {
+        margin: 2px 0;
+    }
+
+    #hearts {
+        font-size: 20px !important;
+    }
+
+    .special-bar-container {
+        width: 100px !important;
+        height: 8px !important;
+    }
+
+    #room-info {
+        font-size: 10px !important;
+    }
+
+    .kill-counter,
+    .build-counter,
+    .room-counter {
+        font-size: 8px !important;
+        padding: 3px 6px !important;
+    }
+
+    .build-counter {
+        left: 10px !important;
+        top: 80px !important;
+    }
+
+    .room-counter {
+        left: 10px !important;
+        top: 105px !important;
+    }
+
+    .inventory-hint {
+        bottom: 5px !important;
+        font-size: 8px !important;
+        right: 5px !important;
+    }
+
+    .boss-warning {
+        top: 5px !important;
+        right: 10px !important;
+        font-size: 10px !important;
+        padding: 3px 8px !important;
+    }
+
+    .re-inventory-container {
+        padding: 10px;
+        max-width: 90vw;
+    }
+
+    #reInventoryCanvas {
+        width: 100% !important;
+        height: auto !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-controls {
+        display: none !important;
+    }
 }
