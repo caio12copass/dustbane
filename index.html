@@ -1150,7 +1150,7 @@
 
       // ---------- Configuração dos Bosses ----------
       const bossTypesMap = {
-        'acaro': { name: "ÁCARO GIGANTE", color: "#8B4513", sizeMult: 2.2, hp: 1800, speed: 1.8, flyer: false, special: "dash" },
+        'acaro': { name: "ÁCARO GIGANTE", color: "#8B4513", sizeMult: 2.2, hp: 1550, speed: 1.45, flyer: false, special: "fangBurst" },
         'tufo': { name: "TUFO GIGANTE", color: "#bc9a6c", sizeMult: 2.0, hp: 2000, speed: 1.0, flyer: false, special: "spawnMinions" },
         'esporo': { name: "ESPORO GIGANTE", color: "#4caf50", sizeMult: 2.0, hp: 1600, speed: 2.0, flyer: false, special: "explosiveShots" },
         'polen': { name: "PÓLEN GIGANTE", color: "#FFD700", sizeMult: 2.2, hp: 1500, speed: 2.5, flyer: true, special: "spiralShots" },
@@ -1235,6 +1235,8 @@
       let enemies = [], bullets = [], enemyBullets = [];
       const keys = {}, mouse = { x: 0, y: 0 };
       let shootingMode = 'mouse';
+      const SHOOT_MODE_KEY = 'dustbane_shoot_mode';
+      let aimDirection = { x: 1, y: 0 };
       let worldHoverLabel = '';
       let worldHoverPos = {x:0,y:0};
       let doors = [], ambientObjects = [], lightPoints = [];
@@ -2036,7 +2038,7 @@
       }
 
       function isNearSacredVacuumAltar(){
-        return !inHub && currentPos.x===0 && currentPos.y===0 && Math.hypot(player.x+14-400, player.y+14-285) < 70;
+        return !inHub && currentAct === 1 && !hasSacredVacuum && currentPos.x===0 && currentPos.y===0 && Math.hypot(player.x+14-400, player.y+14-285) < 70;
       }
 
       function setupREInventoryEvents() {
@@ -2295,7 +2297,7 @@
 
       function getShopStock(roomKey){
         if(shopStockByRoom[roomKey]) return shopStockByRoom[roomKey];
-        const ids = Object.keys(availablePowerUps);
+        const ids = Object.keys(availablePowerUps).filter(id => availablePowerUps[id].type !== 'sagrada');
         const shuffled = ids
           .map(id => ({ id, r: Math.random() }))
           .sort((a,b)=>a.r-b.r)
@@ -2580,6 +2582,49 @@
         return false;
       }
       
+      function saveShootModeSetting(){
+        try { localStorage.setItem(SHOOT_MODE_KEY, shootingMode); }
+        catch(e) { console.warn('Não foi possível salvar o modo de tiro:', e); }
+      }
+      function loadShootModeSetting(){
+        try {
+          const saved = localStorage.getItem(SHOOT_MODE_KEY);
+          shootingMode = saved === 'arrows' ? 'arrows' : 'mouse';
+        } catch(e) {
+          shootingMode = 'mouse';
+        }
+      }
+      function applyShootModeCursor(){
+        const gameCanvas = document.getElementById('gameCanvas');
+        if(gameCanvas) gameCanvas.style.cursor = shootingMode === 'mouse' ? 'crosshair' : 'default';
+      }
+      function hasArrowAimInput(){
+        return !!(keys['ArrowUp'] || keys['ArrowDown'] || keys['ArrowLeft'] || keys['ArrowRight']);
+      }
+      function getAimVector(){
+        let ax = 0, ay = 0;
+        if(shootingMode === 'arrows'){
+          if(keys['ArrowUp']) ay -= 1;
+          if(keys['ArrowDown']) ay += 1;
+          if(keys['ArrowLeft']) ax -= 1;
+          if(keys['ArrowRight']) ax += 1;
+          if(ax !== 0 || ay !== 0){
+            const len = Math.hypot(ax, ay) || 1;
+            aimDirection.x = ax / len;
+            aimDirection.y = ay / len;
+          }
+          return { x: aimDirection.x, y: aimDirection.y };
+        }
+        ax = mouse.x - (player.x + 14);
+        ay = mouse.y - (player.y + 14);
+        if(ax !== 0 || ay !== 0){
+          const len = Math.hypot(ax, ay) || 1;
+          aimDirection.x = ax / len;
+          aimDirection.y = ay / len;
+        }
+        return { x: ax, y: ay };
+      }
+
       function updateShootModeUI(){
         const mouseBtn = document.getElementById('shoot-mode-mouse');
         const arrowsBtn = document.getElementById('shoot-mode-arrows');
@@ -2596,6 +2641,8 @@
         shootingMode = mode === 'arrows' ? 'arrows' : 'mouse';
         if(shootingMode === 'arrows') keys['MouseDown'] = false;
         updateShootModeUI();
+        applyShootModeCursor();
+        saveShootModeSetting();
         saveGame();
       }
       function togglePause() {
@@ -2802,7 +2849,7 @@
             spawnEnemy(ex, ey, eType, false);
           }
           if(Math.random()<0.3 && powerUpItems.length===0){
-            let ids = Object.keys(availablePowerUps);
+            let ids = Object.keys(availablePowerUps).filter(id => availablePowerUps[id].type !== 'sagrada');
             let rnd = ids[Math.floor(Math.random()*ids.length)];
             if(!inventory.includes(rnd)) spawnPowerUpItem(canvas.width/2,canvas.height/2,rnd);
           }
@@ -3778,12 +3825,21 @@
             if(en.attackTimer<=0){
               en.attackTimer = 120;
               switch(en.special){
-                case 'dash':
-                  let a2 = Math.atan2(dyp, dxp);
-                  en.x += Math.cos(a2)*150;
-                  en.y += Math.sin(a2)*150;
-                  clampEntityToRoom(en, en.size, false);
-                  shakeTime=10;
+                case 'fangBurst':
+                  if(enemyBullets.length < MAX_ENEMY_BULLETS - 6){
+                    playEnemyShotSfx();
+                    let base = Math.atan2(dyp, dxp);
+                    for(let i=-2;i<=2;i++){
+                      let ang = base + i*0.18;
+                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*5.5, vy:Math.sin(ang)*5.5});
+                    }
+                    for(let i=0;i<2;i++){
+                      let side = base + (i===0 ? -0.55 : 0.55);
+                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(side)*4.2, vy:Math.sin(side)*4.2});
+                    }
+                    shakeTime = 4;
+                    createParticles(enCX,enCY,'#b98563',10,3);
+                  }
                   break;
                 case 'spawnMinions':
                   if(enemies.length < MAX_ENEMIES) {
@@ -3978,13 +4034,15 @@
         if(hasSacredVacuum && Date.now()-player.lastShot > player.shotDelay && bullets.length < MAX_BULLETS){
           let shootX = 0, shootY = 0;
           if(shootingMode === 'arrows'){
-            if(keys['ArrowUp']) shootY -= 1;
-            if(keys['ArrowDown']) shootY += 1;
-            if(keys['ArrowLeft']) shootX -= 1;
-            if(keys['ArrowRight']) shootX += 1;
+            if(hasArrowAimInput()){
+              const aim = getAimVector();
+              shootX = aim.x;
+              shootY = aim.y;
+            }
           } else if(keys['MouseDown']){
-            shootX = mouse.x - (player.x + 14);
-            shootY = mouse.y - (player.y + 14);
+            const aim = getAimVector();
+            shootX = aim.x;
+            shootY = aim.y;
           }
           if(shootX !== 0 || shootY !== 0){
             let a = Math.atan2(shootY, shootX);
@@ -4222,7 +4280,8 @@
         if(!player.invincible || Math.floor(gameTime*10)===0 || Math.floor(gameTime*10)%2===0){
           ctx.save(); let bob=Math.sin(player.walkCycle)*4, tilt=Math.cos(player.walkCycle)*0.08;
           const cx = player.x+player.size/2, cy = player.y+player.size/2;
-          const ang = Math.atan2(mouse.y-cy, mouse.x-cx);
+          const aim = getAimVector();
+          const ang = Math.atan2(aim.y, aim.x);
           const ex = Math.cos(ang) * 1.8;
           const ey = Math.sin(ang) * 1.5;
           ctx.translate(cx, cy); ctx.rotate(tilt);
@@ -4287,7 +4346,7 @@
 
 
       function drawSacredVacuumAltar(){
-        if(currentPos.x!==0 || currentPos.y!==0) return;
+        if(currentAct !== 1 || currentPos.x!==0 || currentPos.y!==0 || hasSacredVacuum) return;
         ctx.save();
         ctx.translate(400,285);
         ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0,44,76,18,0,0,Math.PI*2); ctx.fill();
@@ -4305,8 +4364,6 @@
           ctx.fillStyle='#59646b'; ctx.fillRect(30,-31,76,16);
           ctx.strokeStyle='#aeb6bc'; ctx.lineWidth=3; ctx.strokeRect(30,-31,76,16);
           ctx.fillStyle='#e8d6aa'; ctx.font='22px VT323'; ctx.textAlign='center'; ctx.fillText('APERTE F PARA TOMAR O ASPIRADOR',0,82);
-        } else {
-          ctx.fillStyle='#d9b650'; ctx.font='22px VT323'; ctx.textAlign='center'; ctx.fillText('ALTAR VAZIO',0,82);
         }
         ctx.restore();
       }
@@ -4519,7 +4576,7 @@
       }
 
       function saveGame(){
-        try { localStorage.setItem(SAVE_KEY, JSON.stringify(serializeGame())); }
+        try { localStorage.setItem(SAVE_KEY, JSON.stringify(serializeGame())); saveShootModeSetting(); }
         catch(e) { console.warn('Não foi possível salvar Dustbane:', e); }
       }
 
@@ -4571,7 +4628,7 @@
           Object.keys(sacredRelicDefs).forEach(id=>{ if(storyRelics.includes(sacredRelicDefs[id].name) && !foundSacredRelics.includes(id)) foundSacredRelics.push(id); });
           inventory = data.inventory || [];
           equippedItems = data.equippedItems || [];
-          shootingMode = data.shootingMode === 'arrows' ? 'arrows' : 'mouse';
+          shootingMode = data.shootingMode ? (data.shootingMode === 'arrows' ? 'arrows' : 'mouse') : (localStorage.getItem(SHOOT_MODE_KEY) === 'arrows' ? 'arrows' : 'mouse');
           Object.assign(player, data.player || {});
           enemies = data.enemies || [];
           bullets = data.bullets || [];
@@ -4581,7 +4638,7 @@
           bossTraps = data.bossTraps || [];
           shopItems = data.shopItems || [];
           if(equippedItems.includes('roomba') && !roombaActive) spawnRoomba();
-          updateDoors(); updateUI(); updateBuildCounter(); updateKillCounter(); renderBlessingMenu();
+          updateDoors(); updateUI(); updateBuildCounter(); updateKillCounter(); renderBlessingMenu(); updateShootModeUI(); applyShootModeCursor(); saveShootModeSetting();
           return true;
         } catch(e){ console.warn('Save corrompido:', e); return false; }
       }
@@ -4598,10 +4655,12 @@
         storyRelics = [];
         guardianRooms = {}; defeatedGuardians = []; currentAct = 1; actPortalUnlocked = false; guardianDialogueSeen = {}; finalVictory = false;
         inventory = []; equippedItems = [];
-        shootingMode = 'mouse';
+        loadShootModeSetting();
         dustCount = 0; totalKills = 0; roomsExplored = 0; blackDustLevel = 0;
         const menu = document.getElementById('start-menu');
         if(menu) menu.style.display = 'none';
+        updateShootModeUI();
+        applyShootModeCursor();
         enterHub();
       }
       function continueGame(){
@@ -4679,6 +4738,9 @@
       };
       window.onmouseup = (e)=>{ if(e.button === 0) keys['MouseDown']=false; if(e.button === 2) keys['Vacuum']=false; };
 
+      loadShootModeSetting();
+      updateShootModeUI();
+      applyShootModeCursor();
       window.setShootMode = setShootMode;
       window.startGame = startGame;
       window.continueGame = continueGame;
