@@ -2816,7 +2816,7 @@
         if(type==='mofo') extra={spawnTimer:0,spawnDelay:300};
         if(type==='mimic') extra={revealed:false};
         playEnemyVoice(type==='verme_negro' ? 'worm' : 'enemy');
-        enemies.push({...t,...extra, type, x, y, vx:0, vy:0, flash:0, slow:0});
+        enemies.push({...t,...extra, type, x, y, maxHp:t.hp, vx:0, vy:0, flash:0, slow:0});
       }
 
       function spawnGuardian(x, y, guardianId){
@@ -4036,14 +4036,18 @@
               if(!checkCollision(en.x, newY, en.size, roomData.obstacles)) en.y = newY;
             }
           }
-          if(player.isVacuuming && distSq<40000 && !en.isGuardian){
+          const vRange = getVacuumRange();
+          if(player.isVacuuming && distSq < vRange*vRange && !en.isGuardian){
             let ang = Math.atan2(enCY-(player.y+14), enCX-(player.x+14));
             if(isSuperVacuumActive){
               en.vx -= Math.cos(ang)*12; en.vy -= Math.sin(ang)*12;
               if(distSq < (50+en.size/2)*(50+en.size/2)) en.hp-=5;
             } else {
-              en.vx -= Math.cos(ang)*3; en.vy -= Math.sin(ang)*3;
+              const pull = getVacuumPull();
+              en.vx -= Math.cos(ang)*pull; en.vy -= Math.sin(ang)*pull;
             }
+            if(hasRelicActive('bocal_purificacao')) en.hp -= (en.type==='verme_negro' || en.type==='larva_negra') ? 0.6 : 0.3;
+          }
           }
           if(Math.abs(en.vx) > 0.02 || Math.abs(en.vy) > 0.02){
             let pushX = en.x + en.vx;
@@ -4104,7 +4108,7 @@
               }
             }
           }
-          if(b.hitEnemy){ player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+5); updateUI(); }
+          if(b.hitEnemy){ player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+(hasRelicActive('bateria_antiga') ? 8 : 5)); updateUI(); }
           if(hit) bullets.splice(i,1);
         }
         updateRoomba();
@@ -4113,9 +4117,9 @@
         for(let i=enemyBullets.length-1;i>=0;i--){
           let eb=enemyBullets[i];
           eb.x+=eb.vx; eb.y+=eb.vy;
-          if(isItemEquipped('shield') && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<625 && enemyBullets.length < MAX_ENEMY_BULLETS){
-            let ang = Math.atan2(eb.y-(player.y+14), eb.x-(player.x+14));
-            enemyBullets.push({x:player.x+14, y:player.y+14, vx:Math.cos(ang+Math.PI)*8, vy:Math.sin(ang+Math.PI)*8});
+          if(isItemEquipped('shield') && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<625){
+            if(bullets.length < MAX_BULLETS) bullets.push({x:eb.x, y:eb.y, vx:-eb.vx*1.6, vy:-eb.vy*1.6, hitEnemy:false});
+            createParticles(eb.x, eb.y, '#8fd3ff', 4, 3);
             enemyBullets.splice(i,1);
             continue;
           }
@@ -4144,6 +4148,8 @@
             totalKills++; updateKillCounter(); updateUI();
             if(en.isBoss){
               bossDefeated=true;
+              const bossRelic = {1:'bateria_antiga', 3:'mangueira_celeste'}[currentAct];
+              if(bossRelic && !hasFoundRelic(bossRelic)) addSacredRelic(bossRelic);
               clearedRooms.add(`${currentPos.x},${currentPos.y}`);
               if(currentAct === 5){
                 finalVictory = true;
@@ -4329,7 +4335,7 @@
           }
           if(hasSacredVacuum && player.isVacuuming){
             ctx.fillStyle=isSuperVacuumActive?"rgba(255,0,255,0.4)":"rgba(0,255,255,0.2)";
-            ctx.beginPath(); ctx.moveTo(35,0); ctx.lineTo(200,-70); ctx.lineTo(200,70); ctx.fill();
+            ctx.beginPath(); const vr=getVacuumRange(); ctx.moveTo(35,0); ctx.lineTo(vr,-vr*0.35); ctx.lineTo(vr,vr*0.35); ctx.fill();
           }
           if(isItemEquipped('blades')){
             ctx.fillStyle="rgba(0,255,255,0.2)"; ctx.beginPath(); ctx.arc(0,0,70,0,2*Math.PI); ctx.fill();
@@ -4568,6 +4574,16 @@
         grad.addColorStop(0,"rgba(0,0,0,0)"); grad.addColorStop(0.58,"rgba(0,0,0,0.20)"); grad.addColorStop(1,"rgba(0,0,0,0.62)");
         ctx.fillStyle=grad; ctx.fillRect(0,0,800,600);
 
+        if(finalVictory && !dialogueState.active && !isGameOver){
+          ctx.fillStyle="rgba(8,5,3,0.88)"; ctx.fillRect(0,0,800,600);
+          ctx.textAlign="center"; ctx.fillStyle="#d9b650";
+          ctx.font='36px "Press Start 2P"'; ctx.fillText("FIM DE DUSTBANE",400,240);
+          ctx.fillStyle="#e8d6aa"; ctx.font='26px VT323';
+          ctx.fillText("O Lorde Ácaro caiu e a cidade respira de novo.",400,300);
+          ctx.fillText(`Abates: ${totalKills}  |  Pó: ${dustCount}`,400,340);
+          ctx.font='22px VT323'; ctx.fillText("CLIQUE PARA VOLTAR AO VILAREJO",400,430);
+        }
+
         if(isGameOver){
           ctx.fillStyle="rgba(8,5,3,0.92)"; ctx.fillRect(0,0,800,600);
           ctx.fillStyle=bossDefeated?"#d9b650":"#e8d6aa"; ctx.textAlign="center";
@@ -4678,6 +4694,17 @@
 
       function resetSave(){ localStorage.removeItem(SAVE_KEY); }
 
+      function hasRelicActive(id){ return installedSacredRelics.includes(id); }
+      function getVacuumRange(){ return hasRelicActive('mangueira_celeste') ? 260 : 200; }
+      function getVacuumPull(){ return hasRelicActive('motor_sagrado') ? 4.2 : 3; }
+      
+      function returnToHubAfterVictory(){
+        finalVictory = false; bossDefeated = false; bossDefeatedNoticeShown = false;
+        actPortalUnlocked = false; currentAct = 1; blackDustLevel = 0; blackDustLastMilestone = 0;
+        player.hp = player.maxHp;
+        enterHub();
+      }
+
       function loop(){
         requestAnimationFrame(loop);
         try { update(); draw(); }
@@ -4774,6 +4801,7 @@
       window.onmousedown = (e)=>{
         e.preventDefault();
         if(isGameOver) location.reload();
+        if(finalVictory && !dialogueState.active && !inHub){ returnToHubAfterVictory(); return; }
         if (e.button === 0 && hasSacredVacuum && shootingMode === 'mouse') keys['MouseDown']=true;
         if (e.button === 2 && hasSacredVacuum) keys['Vacuum']=true;
       };
