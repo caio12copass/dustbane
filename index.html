@@ -404,14 +404,14 @@
       display: none;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 768px), (pointer: coarse) {
       body {
         flex-direction: column;
         justify-content: flex-start;
         padding-top: 5px;
       }
 
-      canvas {
+      #gameCanvas {
         width: 100vw !important;
         height: auto !important;
         max-height: 50vh;
@@ -455,7 +455,7 @@
 
       .action-buttons {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
 
@@ -560,7 +560,7 @@
       }
     }
 
-    @media (min-width: 769px) {
+    @media (min-width: 769px) and (pointer: fine) {
       .mobile-controls {
         display: none !important;
       }
@@ -897,6 +897,9 @@
     .vacuum-status { font-family:var(--font-ui); color:#e8d6aa; font-size:21px; line-height:1.12; margin: 6px 0 0; }
     .relic-state { display:inline-block; margin-bottom:5px; font-family:var(--font-title); font-size:9px; color:#d9b650; background:rgba(217,182,80,.10); border:1px solid rgba(217,182,80,.18); padding:2px 6px; }
     @media(max-width:768px){ .vacuum-panel{grid-template-columns:1fr;} .dialogue-text{font-size:22px;} .dialogue-inner{grid-template-columns:70px 1fr;} .dialogue-portrait{width:62px;height:62px;} }
+    @media (orientation: landscape) and (pointer: coarse) {
+      #gameCanvas { width: auto !important; height: 100vh !important; max-height: none !important; }
+    }
 
 
   </style>
@@ -1052,6 +1055,9 @@
       <button class="action-btn" id="vacuumBtn">A</button>
       <button class="action-btn" id="dashBtn">D</button>
       <button class="action-btn" id="inventoryBtn">M</button>
+      <button class="action-btn" id="interactBtn">F</button>
+      <button class="action-btn" id="relicBtn">R</button>
+      <button class="action-btn" id="pauseBtn">II</button>
     </div>
   </div>
 
@@ -2206,6 +2212,26 @@
           });
         }
 
+        window.addEventListener('touchstart', ensureAudioContext, { passive: true });
+
+        const interactBtn = document.getElementById('interactBtn');
+        if (interactBtn) {
+          interactBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (dialogueState.active) { advanceDialogue(); return; }
+            keys['KeyF'] = true;
+            if (!isGameOver && !isPaused && !inHub) buyNearestShopItem();
+          });
+          interactBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys['KeyF'] = false; });
+        }
+        
+        const relicBtn = document.getElementById('relicBtn');
+        if (relicBtn) relicBtn.addEventListener('touchstart', (e) => { e.preventDefault(); toggleSacredVacuumScreen(); });
+        
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (pauseBtn) pauseBtn.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); });
+                
+  
         canvas.addEventListener('touchmove', (e) => {
           e.preventDefault();
           const rect = canvas.getBoundingClientRect();
@@ -2213,6 +2239,7 @@
           mouse.y = (e.touches[0].clientY - rect.top) * (600 / rect.height);
         });
         canvas.addEventListener('touchstart', (e) => {
+          if (isGameOver) location.reload();
           e.preventDefault();
           const rect = canvas.getBoundingClientRect();
           mouse.x = (e.touches[0].clientX - rect.left) * (800 / rect.width);
