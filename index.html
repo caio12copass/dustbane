@@ -1117,6 +1117,7 @@
       let blackDustLastMilestone = 0;
       let bossDefeatedNoticeShown = false;
       let saveTimer = 0;
+      let gameStarted = false;
       let inHub = true;
       let hubMessageCooldown = 0;
       let roomTransitionCooldown = 0;
@@ -1555,16 +1556,20 @@
       }
 
       function swapBlessingSlots(a, b){
-        if(a===null || b===null || a===b) return;
-        const tmp = equippedItems[a];
-        equippedItems[a] = equippedItems[b] || null;
-        equippedItems[b] = tmp || null;
-        while(equippedItems.length && !equippedItems[equippedItems.length-1]) equippedItems.pop();
+        if(a===null || b===null || a===b || !equippedItems[a]) return;
+        if(!equippedItems[b]){
+          const [moved] = equippedItems.splice(a, 1);
+          equippedItems.splice(Math.min(b, equippedItems.length), 0, moved);
+        } else {
+          const tmp = equippedItems[a];
+          equippedItems[a] = equippedItems[b];
+          equippedItems[b] = tmp;
+        }
         saveGame();
         renderBlessingMenu();
         updateUI();
       }
-
+      
       function handleBlessingSlotClick(idx){
         if(pendingBlessing){
           if(equippedItems[idx]) replaceBlessingSlot(idx);
@@ -3168,7 +3173,7 @@
           }
           case 'mofo': {
             ctx.fillStyle = '#5b3824';
-            ctx.beginPath(); ctx.roundRect(-half*0.82,-half*0.82,half*1.64,half*1.64,half*0.18); ctx.fill();
+            ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(-half*0.82,-half*0.82,half*1.64,half*1.64,half*0.18); else ctx.rect(-half*0.82,-half*0.82,half*1.64,half*1.64); ctx.fill();
             for(let i=0;i<10;i++){
               const x = -half*0.55 + (i%5)*half*0.28;
               const y = -half*0.38 + Math.floor(i/5)*half*0.50;
@@ -4576,6 +4581,7 @@
       }
 
       function saveGame(){
+        if(!gameStarted || isGameOver) return;
         try { localStorage.setItem(SAVE_KEY, JSON.stringify(serializeGame())); saveShootModeSetting(); }
         catch(e) { console.warn('Não foi possível salvar Dustbane:', e); }
       }
@@ -4627,7 +4633,7 @@
           // compatibilidade: saves antigos que guardavam reliquias pelo nome
           Object.keys(sacredRelicDefs).forEach(id=>{ if(storyRelics.includes(sacredRelicDefs[id].name) && !foundSacredRelics.includes(id)) foundSacredRelics.push(id); });
           inventory = data.inventory || [];
-          equippedItems = data.equippedItems || [];
+          equippedItems = (data.equippedItems || []).filter(id => id && availablePowerUps[id]);
           shootingMode = data.shootingMode ? (data.shootingMode === 'arrows' ? 'arrows' : 'mouse') : (localStorage.getItem(SHOOT_MODE_KEY) === 'arrows' ? 'arrows' : 'mouse');
           Object.assign(player, data.player || {});
           enemies = data.enemies || [];
@@ -4645,8 +4651,14 @@
 
       function resetSave(){ localStorage.removeItem(SAVE_KEY); }
 
-      function loop(){ update(); draw(); requestAnimationFrame(loop); }
+      function loop(){
+        requestAnimationFrame(loop);
+        try { update(); draw(); }
+        catch(err){ console.error('Erro no loop:', err); }
+      }
+      
       function startGame(){
+        gameStarted = true;
         resetSave();
         inHub = true;
         hasSacredVacuum = false;
@@ -4666,6 +4678,8 @@
       function continueGame(){
         const ok = loadGame();
         if(!ok){ showNotification('NENHUM SAVE ENCONTRADO.'); return; }
+        gameStarted = true;
+        if(isGameOver || player.hp <= 0){ player.hp = player.maxHp; enterHub(); }
         const menu = document.getElementById('start-menu');
         if(menu) menu.style.display = 'none';
         isPaused = false;
