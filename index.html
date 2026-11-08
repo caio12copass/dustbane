@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="manifest.json">
-  <title>Dustbane</title>
+  <title>Dustbane v7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -902,7 +901,49 @@
     }
 
 
-  </style>
+      .blessings-container{ position:relative; }
+  
+    #notify-stack{position:fixed;top:14%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:400;pointer-events:none}
+    #notify-stack .item-notification{position:relative;top:auto;left:auto;transform:none;margin:0;animation:notifFade 2s forwards;white-space:normal;max-width:min(720px,90vw);font-size:14px;line-height:1.4}
+    @keyframes notifFade{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+    #boss-hud{display:none;position:fixed;z-index:12;pointer-events:none;text-align:center;font-family:var(--font-title)}
+    #boss-hud-name{color:#e8d6aa;font-size:14px;letter-spacing:1px;text-shadow:2px 2px #000;margin-bottom:6px}
+    #boss-hud-bar{height:18px;background:#170707;border:3px solid #e3a35b;box-shadow:0 0 0 2px #080605}
+    #boss-hud-fill{height:100%;width:100%;background:linear-gradient(90deg,#7f2e24,#b83a2e);transition:width .15s}
+    #boss-hud-hp{color:#b99662;font-family:var(--font-ui);font-size:20px;margin-top:2px}
+    #blessing-bag{display:none;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:8px 0}
+    #blessing-bag .bag-label{width:100%;font-family:var(--font-ui);font-size:20px;color:#b99662}
+    #hud-left,#hud-right{display:contents}
+    @media (min-width:1320px) and (pointer:fine){
+      #hud-left,#hud-right{display:flex;flex-direction:column;gap:10px;position:fixed;top:calc(50vh - 306px);width:230px;z-index:10}
+      #hud-left{left:calc(50vw - 652px)}
+      #hud-right{left:calc(50vw + 422px)}
+      #hud-left > *,#hud-right > *{position:static !important;left:auto !important;top:auto !important;right:auto !important;bottom:auto !important;min-width:0;max-width:none}
+    }
+    
+    .ui{display:none !important}
+    #hud-panel{position:absolute;top:15px;left:15px;width:230px;z-index:10;pointer-events:none;font-family:var(--font-ui);color:var(--paper);text-shadow:2px 2px #000}
+    .hp-main{display:flex;gap:8px;align-items:stretch}
+    .hp-box,.hp-gauge{background:rgba(20,14,10,.88);border:2px solid #d9b650;border-radius:8px;box-shadow:0 0 0 2px #080605,0 0 12px rgba(217,182,80,.25),inset 0 0 10px rgba(217,182,80,.10)}
+    .hp-box{flex:1;padding:6px 10px 2px;min-width:0}
+    .hp-title{font-size:15px;letter-spacing:1px;color:#b99662;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hp-row{display:flex;justify-content:space-between;font-size:22px;line-height:1}
+    .hp-bar{position:relative;height:10px;margin:3px 0 8px;background:#0b0706;border:1px solid #6b5036}
+    .hp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7f2e24,#d9b650);transition:width .15s}
+    .hp-bar.vac i{background:linear-gradient(90deg,#3d6f8f,#8fd3ff)}
+    .hp-bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 11px,rgba(0,0,0,.6) 11px 12px)}
+    .hp-gauge{width:26px;display:flex;flex-direction:column-reverse;gap:3px;padding:6px 5px}
+    .hp-gauge i{flex:1;background:#1a1410;border:1px solid #3d2a1d}
+    .hp-list{margin-top:10px;font-size:22px;letter-spacing:1px}
+    .hp-item{display:flex;justify-content:space-between;gap:10px;line-height:1.15}
+    .hp-item b{font-weight:normal;color:#d9b650;margin-right:8px}
+    .hp-item .st{color:#8f745a}.hp-item .st.ready{color:#d9b650}
+    .build-counter,.room-counter,.kill-counter,.inventory-hint,#minimap-container{border:2px solid #d9b650;border-radius:8px;box-shadow:0 0 0 2px #080605,0 0 12px rgba(217,182,80,.2),inset 0 0 10px rgba(217,182,80,.08)}
+    @media (max-width:768px),(pointer:coarse){#hud-panel{top:5px;left:5px;transform:scale(.62);transform-origin:top left}}
+    
+    .blessing-tooltip{white-space:normal;max-width:300px}
+    .hp-item span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    </style>
 </head>
 <body>
   <!-- TELA INICIAL -->
@@ -910,27 +951,30 @@
     <div class="menu-board">
       <div class="board-strip"></div>
       <div class="menu-paper mission-paper">
-        <div class="paper-tag">ORDEM DE SERVICO 01</div>
-        <h1>DUST<br>BANE</h1>
-        <p class="paper-copy">A Poeira Negra voltou depois de eras. O ultimo escolhido precisa atravessar a cidade antiga, recuperar as reliquias dos Guardioes e encontrar o Aspirador Sagrado antes do Lorde Acaro.</p>
+        <div class="paper-tag">ORDEM DE SERVIÇO 01</div>
+        <h1>DUST<br>BANE</h1><div class="menu-small">versão 7</div>
+        <p class="paper-copy">A Poeira Negra voltou depois de eras. O último escolhido precisa atravessar a cidade antiga, recuperar as relíquias dos Guardiões e encontrar o Aspirador Sagrado antes do Lorde Acaro.</p>
         <div class="menu-actions">
           <button class="btn-ui" onclick="startGame()">NOVA JORNADA</button>
           <button class="btn-ui" onclick="continueGame()" id="continue-btn">CONTINUAR SAVE</button>
-          <div class="menu-small">roguelite de poeira negra, reliquias e vermes</div>
+          <div class="menu-small">roguelite de poeira negra, relíquias e vermes</div>
         </div>
       </div>
       <div class="menu-paper controls-paper">
-        <div class="paper-tag">ANOTACOES RAPIDAS</div>
+        <div class="paper-tag">ANOTAÇÕES RAPIDAS</div>
         <ul class="menu-list">
           <li><span>W A S D</span><span>andar</span></li>
           <li><span>MOUSE</span><span>atirar e mirar</span></li>
-          <li><span>ESPACO</span><span>aspirador especial</span></li>
-          <li><span>TAB</span><span>ver bencaos</span></li>
+          <li><span>ESPAÇO</span><span>expulsar energia</span></li>
+          <li><span>TAB</span><span>ver bênçãos</span></li>
           <li><span>R</span><span>aspirador sagrado</span></li>
           <li><span>SHIFT</span><span>dash, se equipado</span></li>
           <li><span>F</span><span>comprar na loja</span></li>
+          <li><span>Q</span><span>chamar o roomba</span></li>
+          <li><span>E</span><span>sugar</span></li>
+          <li><span>C</span><span>vórtice</span></li>
         </ul>
-        <div class="menu-note">Equipe ate seis bencaos, junte po, salve sua jornada e procure as partes do Aspirador Sagrado.</div>
+        <div class="menu-note">Equipe até seis bênçãos, junte po, salve sua jornada e procure as partes do Aspirador Sagrado.</div>
         <div class="menu-seal">PROFECIA ATIVA</div>
       </div>
     </div>
@@ -964,7 +1008,7 @@
       <div class="black-dust-label"><span>POEIRA NEGRA</span><span id="black-dust-percent">0%</span></div>
       <div class="black-dust-bar"><div id="black-dust-fill"></div></div>
     </div>
-    <div id="black-dust-status" style="font-size:10px; color:#b99662; margin-top:4px;">ESTAVEL</div>
+    <div id="black-dust-status" style="font-size:10px; color:#b99662; margin-top:4px;">ESTÁVEL</div>
     <div id="equipped-item" style="font-size:10px; color:#FFD700;"></div>
   </div>
 
@@ -976,18 +1020,18 @@
 
   <!-- CONTADORES -->
   <div class="kill-counter" id="kill-counter"> INIMIGOS: 0</div>
-  <div class="build-counter" id="build-counter"> BENCAOS: 0/6</div>
+  <div class="build-counter" id="build-counter"> BÊNÇÃOS: 0/6</div>
   <div class="room-counter" id="room-counter"> SALAS: 0/0</div>
-  <div class="inventory-hint">BENCAOS: TAB</div>
+  <div class="inventory-hint">BÊNÇÃOS: TAB</div>
 
-  <!-- TELA DE BENCAOS / BUILD -->
+  <!-- TELA DE BÊNÇÃOS / BUILD -->
   <div id="re-inventory" class="re-inventory-overlay">
     <div class="re-inventory-container blessings-container">
       <div class="re-inventory-header">
         <span class="re-inventory-close" onclick="toggleREInventory()">X</span>
       </div>
       <div class="blessing-summary" aria-hidden="true">
-        <div class="summary-chip"><span class="label">BENCAOS ATIVAS</span><span class="value" id="re-equipped-info">Bencaos: 0/6 | Po: 0</span></div>
+        <div class="summary-chip"><span class="label">BÊNÇÃOS ATIVAS</span><span class="value" id="re-equipped-info">Bencaos: 0/6 | Po: 0</span></div>
         <div class="summary-chip"><span class="label">PROGRESSO SAGRADO</span><span class="value" id="relic-info">Reliquias: nenhuma</span></div>
       </div>
       <div class="blessing-layout">
@@ -1058,9 +1102,12 @@
       <button class="action-btn" id="interactBtn">F</button>
       <button class="action-btn" id="relicBtn">R</button>
       <button class="action-btn" id="pauseBtn">II</button>
+      <button class="action-btn" id="expelBtn">X</button>
+      <button class="action-btn" id="vortexBtn">C</button>
     </div>
   </div>
 
+  <div id="boss-hud"><div id="boss-hud-name"></div><div id="boss-hud-bar"><div id="boss-hud-fill"></div></div><div id="boss-hud-hp"></div></div>
   <canvas id="gameCanvas"></canvas>
 
   <script>
@@ -1171,14 +1218,27 @@
       const availablePowerUps = {
         'laminas': { name: "Lâmina Rotatória", effect: "blades", type:'bocal', desc:'Lâminas giram ao redor do escolhido.' },
         'estatico': { name: "Raio Estático", effect: "splash", type:'nucleo', desc:'Tiros espalham dano em inimigos próximos.' },
-        'roomba': { name: "Roomba Assistente", effect: "roomba", type:'reliquia', desc:'Um ajudante mecânico persegue e fere vermes.' },
-        'escudo': { name: "Escudo de Ar", effect: "shield", type:'reliquia', desc:'Cria proteção contra projéteis e poeira.' },
+        'roomba': { name: "Roomba Assistente", effect: "roomba", type:'reliquia', desc:'Aperte Q para chamar. Tem vida e some ao ser destruído.' },
+        'escudo': { name: "Escudo de Ar", effect: "shield", type:'reliquia', desc:'Bloqueia 5 tiros e quebra. Volta em 12s.' },
         'dash': { name: "Dash Turbo", effect: "dash", type:'movimento', desc:'Libera avanço rápido com SHIFT.' },
         'ima': { name: "Ímã de Poeira", effect: "magnet", type:'reliquia', desc:'Atrai pó coletável para perto do jogador.' },
-        'congelamento': { name: "Congelamento", effect: "freeze", type:'nucleo', desc:'Ataques desaceleram criaturas da Poeira Negra.' },
+        'congelamento': { name: "Congelamento", effect: "freeze", type:'nucleo', desc:'Um tiro congela inimigos próximos. Recarga de 8s.' },
         'filtro_guardiao': { name: "Filtro do Guardião", effect: "cleanse", type:'sagrada', desc:'Cura um pouco ao limpar salas importantes.' },
         'motor_sagrado': { name: "Motor Sagrado", effect: "holyMotor", type:'sagrada', desc:'Aumenta força de sucção do aspirador.' },
-        'bocal_purificacao': { name: "Bocal de Purificação", effect: "purify", type:'sagrada', desc:'O aspirador causa dano extra durante a sucção.' }
+        'bocal_purificacao': { name: "Bocal de Purificação", effect: "purify", type:'sagrada', desc:'O aspirador causa dano extra durante a sucção.' },
+        'engrenagem_maldita': { name: "Engrenagem Maldita", effect: "gears", type:'ofensiva', rarity:'raro', desc:'A cada 8 abates, engrenagens cruzam a sala.' },
+        'cranio_errante': { name: "Crânio Errante", effect: "skull", type:'ofensiva', rarity:'raro', desc:'Um crânio orbita e atira nos inimigos próximos.' },
+        'cristal_instavel': { name: "Cristal Instável", effect: "crystal", type:'ofensiva', rarity:'comum', desc:'Tiros podem explodir em área (15%).' },
+        'armadilha_antiga': { name: "Armadilha Antiga", effect: "trap", type:'ofensiva', rarity:'comum', desc:'Planta uma armadilha que prende um inimigo.' },
+        'sino_condenados': { name: "Sino dos Condenados", effect: "bell", type:'defensiva', rarity:'raro', desc:'Ao ser ferido, empurra os inimigos próximos.' },
+        'mascara_porcelana': { name: "Máscara de Porcelana", effect: "mask", type:'defensiva', rarity:'comum', desc:'Bloqueia o primeiro golpe de cada sala.' },
+        'esporo_vital': { name: "Esporo Vital", effect: "spore", type:'defensiva', rarity:'comum', desc:'Inimigos podem deixar uma essência de cura.' },
+        'nucleo_corrompido': { name: "Núcleo Corrompido", effect: "corecorrupt", type:'corrompida', rarity:'epico', desc:'+30% de dano, mas inimigos 15% mais rápidos.' },
+        'ampulheta_partida': { name: "Ampulheta Partida", effect: "hourglass", type:'corrompida', rarity:'raro', desc:'Ao limpar uma sala, a próxima começa lenta.' },
+        'filtro_abissal': { name: "Filtro Abissal", effect: "abyss", type:'corrompida', rarity:'comum', desc:'Inimigos sugados rendem mais poeira.' },
+        'coracao_bronze': { name: "Coração de Bronze", effect: "bronze", type:'rara', rarity:'epico', desc:'Menos vida, tiros mais rápidos (até 2x).' },
+        'olho_guardiao': { name: "Olho do Guardião", effect: "eye", type:'rara', rarity:'epico', desc:'Revela a vida dos inimigos.' },
+        'aureola_quebrada': { name: "Auréola Quebrada", effect: "halo", type:'rara', rarity:'lendario', desc:'Em vida crítica, explode em purificação (60 s).' }
       };
 
 
@@ -1187,7 +1247,8 @@
         filtro_guardiao: { name:'Filtro do Guardião', desc:'Purifica parte da Poeira Negra e cura ao limpar salas importantes.' },
         bocal_purificacao: { name:'Bocal de Purificação', desc:'Faz a sucção ferir criaturas corrompidas.' },
         mangueira_celeste: { name:'Mangueira Celeste', desc:'Aumenta o alcance do aspirador sagrado.' },
-        bateria_antiga: { name:'Bateria Antiga', desc:'Carrega o especial mais rápido.' }
+        bateria_antiga: { name:'Bateria Antiga', desc:'Carrega o especial mais rápido.' },
+        camara_compressao: { name:'Câmara de Compressão', desc:'A expulsão causa mais dano e alcança mais longe.' }
       };
 
       const guardianDefs = {
@@ -1231,6 +1292,8 @@
       let inventory = [], equippedItems = [];
       const MAX_EQUIPPED = MAX_BLESSINGS;
       let lastDashTime = 0, roombaActive = null, bladesTimer = 0;
+      const SHIELD_MAX = 5;
+      let shieldHP = SHIELD_MAX, shieldCooldown = 0, roombaCooldown = 0, freezeCooldown = 0;
 
       const player = {
         x: 400, y: 300, size: 28, speed: 3.0, hp: 6, maxHp: 6,
@@ -1393,16 +1456,13 @@
       function toggleREInventory() {
         const overlay = document.getElementById('re-inventory');
         if (!overlay) return;
-        if (overlay.style.display === 'flex') {
-          overlay.style.display = 'none';
-          isPaused = false;
-        } else {
-          if (isGameOver) return;
-          renderBlessingMenu();
-          updateREEquippedInfo();
+        if (overlay.style.display === 'flex') overlay.style.display = 'none';
+        else {
+          if (!canOpenOverlay('re-inventory')) return;
+          renderBlessingMenu(); updateREEquippedInfo();
           overlay.style.display = 'flex';
-          isPaused = true;
         }
+        syncPause();
       }
 
       function updateREEquippedInfo() {
@@ -1413,7 +1473,7 @@
       }
 
       function getTypeClass(type){
-        const map = { bocal:'icon-bocal', nucleo:'icon-nucleo', reliquia:'icon-reliquia', movimento:'icon-movimento', sagrada:'icon-sagrada' };
+        const map = { bocal:'icon-bocal', nucleo:'icon-nucleo', reliquia:'icon-reliquia', movimento:'icon-movimento', sagrada:'icon-sagrada', ofensiva:'icon-bocal', defensiva:'icon-nucleo', corrompida:'icon-movimento', rara:'icon-sagrada' };
         return map[type] || 'icon-reliquia';
       }
       function getTypeLabel(type){
@@ -1478,7 +1538,49 @@
         cctx.restore();
       }
 
+      const PIXEL_PAL = {k:'#120d09',g:'#d9b650',o:'#8d7356',w:'#e8d6aa',r:'#b0572f',p:'#9b5de5',v:'#4a2a7a',c:'#8fd3ff',d:'#3d6f8f',e:'#7ddc6f',s:'#aeb6bc',t:'#56646c',y:'#f4d35e',n:'#c64236',x:'#1a1214',q:'#6b2f1f',u:'#b5793d'};
+      const PIXEL_ICONS = {
+        laminas: ['..kssk..', '.ksssst.', 'kssrrsst', 'ssrkkrst', 'ssrkkrst', 'kssrrsst', '.ksssst.', '..kttk..'],
+        estatico: ['....yy..', '...yy...', '..yyyyy.', '....yy..', '...yy...', '..yy....', '.y......', 'y.......'],
+        roomba: ['..kkkk..', '.ksssst.', 'ksxccxst', 'ksssgsst', 'ksssssst', '.ktttttk', '..kkkk..', '........'],
+        escudo: ['kkkkkkkk', 'kssccssk', 'kscccdsk', 'kscccdsk', '.ksccdk.', '.kscdsk.', '..kcdk..', '...kk...'],
+        dash: ['....c...', '....cc..', '..cccccc', 'cccccccc', '..cccccc', '....cc..', '....c...', '........'],
+        ima: ['ss....ss', 'nn....nn', 'nn....nn', 'nn....nn', 'nnn..nnn', '.nnnnnn.', '..nnnn..', '........'],
+        congelamento: ['...cc...', 'c..cc..c', '.c.cc.c.', 'cccwwccc', '.c.cc.c.', 'c..cc..c', '...cc...', '........'],
+        filtro_guardiao: ['..kkkk..', '.ksssst.', '.kewwet.', '.kewwet.', '.kewwet.', '.ksssst.', '..kttk..', '........'],
+        motor_sagrado: ['..g..g..', '.gggggg.', 'ggoxxogg', '.goxxog.', '.goxxog.', 'ggoxxogg', '.gggggg.', '..g..g..'],
+        bocal_purificacao: ['ss......', 'sstt....', '.ssttp..', '..ssttpp', '..ssttpp', '.ssttp..', 'sstt....', 'ss......'],
+        mangueira_celeste: ['.cccccc.', 'cdddddd.', 'cd......', '.cccccc.', '......dc', '......dc', 'cdddddd.', '.cccccc.'],
+        bateria_antiga: ['..kttk..', '.kssssk.', '.kppppk.', '.kpvvpk.', '.kpvvpk.', '.kppppk.', '.kssssk.', '..kkkk..'],
+        engrenagem_maldita: ['..q..q..', '.qrrrrq.', 'qrrppprq', '.rpvvpr.', '.rpvvpr.', 'qrrppprq', '.qrrrrq.', '..q..q..'],
+        cranio_errante: ['..wwww..', '.wwwwww.', 'wwwwwwww', 'wkkwwkkw', 'wkkwwkkw', '.wwkkww.', '..wkwkw.', '..wwww..'],
+        cristal_instavel: ['...pp...', '..ppcp..', '.pppvpp.', '.ppvppp.', '.pppvpp.', '..ppvp..', '..pvpp..', '...pp...'],
+        armadilha_antiga: ['s.s.s.s.', 'sssssss.', 'qqqqqqqq', 'qrrrrrrq', 'qrrxxrrq', 'qrrrrrrq', 'qqqqqqqq', 's.s.s.s.'],
+        sino_condenados: ['...kk...', '..uuuu..', '.uuguuu.', '.uuguuu.', '.uuuuuu.', 'uuuuuuuu', 'oooooooo', '...yy...'],
+        mascara_porcelana: ['.wwwwww.', 'wwwwwwww', 'wkkwwkkw', 'wkkwwkkw', 'wwwtwwww', '.wwwtww.', '..wttw..', '...ww...'],
+        esporo_vital: ['..eeee..', '.eewwee.', 'eeeeeeee', 'eeewweee', '..wwww..', '..wttw..', '..wttw..', '..wwww..'],
+        nucleo_corrompido: ['..xxxx..', '.xxppxx.', 'xxpxxxxx', 'xpxxxppx', 'xxxxpxxx', 'xxxxxxxx', '.xxxxxx.', '..xxxx..'],
+        ampulheta_partida: ['gggggggg', '.wppppw.', '..wppw..', '...pp...', '...ww...', '..wpvw..', '.wppppw.', 'gggggggg'],
+        filtro_abissal: ['..kkkk..', '.kttttk.', '.kpvvpk.', '.kvpvpk.', '.kpvvpk.', '.kttttk.', '..kssk..', '...ss...'],
+        coracao_bronze: ['.uu..uu.', 'uuuuuuuu', 'uugguuuu', 'uuuuuuuu', '.uuuuuu.', '..uuuu..', '...uu...', '........'],
+        olho_guardiao: ['........', '..cccc..', '.cwwwwc.', 'cwwppwwc', 'cwwppwwc', '.cwwwwc.', '..cccc..', '........'],
+        aureola_quebrada: ['........', '..gggg..', '.gyyyyg.', 'gy....yg', 'g......o', 'gy....y.', '.gyyyg..', '..gooo..'],
+        camara_compressao: ['kkkkkkkk', 'ksttttsk', 'ktxppxtk', 'ktpvvptk', 'ktpvvptk', 'ktxppxtk', 'ksttttsk', 'kkkkkkkk']
+      };
+      function drawPixelIcon(ictx, id, size){
+        const rows = PIXEL_ICONS[id];
+        if(!rows) return false;
+        const px = size/8, x0 = -size/2, y0 = -size/2;
+        for(let r = 0; r < 8; r++) for(let c = 0; c < 8; c++){
+          const ch = rows[r][c];
+          if(ch === '.') continue;
+          ictx.fillStyle = PIXEL_PAL[ch] || '#fff';
+          ictx.fillRect(x0 + c*px, y0 + r*px, px + 0.6, px + 0.6);
+        }
+        return true;
+      }
       function drawPowerupGlyph(ictx, id, size=48, color='#f6ebc7'){
+        if(drawPixelIcon(ictx, id, size)) return;
         const s = size / 48;
         ictx.save();
         ictx.strokeStyle = color;
@@ -1556,8 +1658,10 @@
 
       function bindBlessingHover(target, label){
         if(!target) return;
-        target.dataset.label = label || '';
-        target.onmouseenter = () => { if(label) showBlessingTooltip(label, target); };
+        const bl = Object.values(availablePowerUps).find(b => b.name === label);
+        const text = bl ? label + ' [' + (RARITY[bl.rarity || 'comum'] || RARITY.comum).l + ']: ' + bl.desc : label;
+        target.dataset.label = text;
+        target.onmouseenter = () => { if(text) showBlessingTooltip(text, target); };
         target.onmouseleave = () => hideBlessingTooltip();
       }
 
@@ -1626,6 +1730,7 @@
 
       function renderBlessingMenu(){
         hideBlessingTooltip();
+        renderBlessingBag();
         const slotIds = ['slot-left-0','slot-left-1','slot-left-2','slot-right-0','slot-right-1','slot-right-2'];
         slotIds.forEach((elId, idx)=>{
           const el = document.getElementById(elId);
@@ -1649,6 +1754,7 @@
             bindBlessingHover(el, selectedBlessingSlot !== null ? 'Mover item para este slot' : 'Slot vazio');
           }
           el.onclick = ()=>handleBlessingSlotClick(idx);
+          el.oncontextmenu = (ev)=>{ ev.preventDefault(); unequipBlessingSlot(idx); };
         });
 
         const dustBox = document.getElementById('blessing-dust-box');
@@ -1680,6 +1786,64 @@
         updateREEquippedInfo();
       }
 
+      const roomDrops = {};
+      function dropBlessing(id){
+        if(!id) return;
+        if(inHub){ showNotification('NÃO DÁ PARA DROPAR NO VILAREJO.'); return; }
+        const ei = equippedItems.indexOf(id);
+        if(ei >= 0) equippedItems.splice(ei, 1);
+        inventory = inventory.filter(x => x !== id);
+        if(id === 'roomba') roombaActive = null;
+        const x = Math.max(80, Math.min(700, player.x + 14 + aimDirection.x*70)), y = Math.max(80, Math.min(520, player.y + 14 + aimDirection.y*70));
+        const key = currentPos.x + ',' + currentPos.y;
+        (roomDrops[key] = roomDrops[key] || []).push({id: id, x: x, y: y});
+        powerUpItems.push({x: x, y: y, type: 'powerup', powerUpId: id, size: 20, delay: 90, dropped: true});
+        selectedBlessingSlot = null;
+        showNotification(availablePowerUps[id].name + ' DROPADA.');
+        saveGame(); renderBlessingMenu(); updateUI(); updateBuildCounter();
+      }
+      function unequipBlessingSlot(idx){
+        const id = equippedItems[idx];
+        if(!id) return;
+        equippedItems.splice(idx, 1);
+        if(id === 'roomba') roombaActive = null;
+        selectedBlessingSlot = null;
+        saveGame(); renderBlessingMenu(); updateUI(); updateBuildCounter();
+      }
+      function renderBlessingBag(){
+        let bag = document.getElementById('blessing-bag');
+        if(!bag){
+          const footer = document.getElementById('blessing-dust-footer');
+          if(!footer) return;
+          bag = document.createElement('div'); bag.id = 'blessing-bag';
+          footer.parentNode.insertBefore(bag, footer);
+        }
+        bag.innerHTML = '';
+        const spare = inventory.filter(id => availablePowerUps[id] && availablePowerUps[id].type !== 'sagrada' && !equippedItems.includes(id));
+        const canUnequip = selectedBlessingSlot !== null && !!equippedItems[selectedBlessingSlot];
+        bag.style.display = (spare.length || canUnequip) ? 'flex' : 'none';
+        if(canUnequip){
+          const b = document.createElement('button'); b.className = 'btn-ui'; b.textContent = 'DESEQUIPAR';
+          b.onclick = () => unequipBlessingSlot(selectedBlessingSlot);
+          const dr = document.createElement('button'); dr.className = 'btn-ui'; dr.textContent = 'DROPAR'; dr.onclick = () => dropBlessing(equippedItems[selectedBlessingSlot]); bag.appendChild(dr);
+          bag.appendChild(b);
+        }
+        if(spare.length){
+          const label = document.createElement('div'); label.className = 'bag-label'; label.textContent = 'MOCHILA: clique equipa, botão direito dropa';
+          bag.appendChild(label);
+          spare.forEach(id => {
+            const wrap = document.createElement('div');
+            wrap.className = 'blessing-icon ' + getTypeClass(availablePowerUps[id].type);
+            wrap.style.cursor = 'pointer';
+            const cv = document.createElement('canvas'); cv.className = 'blessing-item-canvas'; cv.width = 48; cv.height = 48;
+            wrap.appendChild(cv); drawPowerupIcon(cv, id);
+            bindBlessingHover(wrap, availablePowerUps[id].name);
+            wrap.onclick = () => { addBlessing(id, 'manual'); };
+            wrap.oncontextmenu = (ev) => { ev.preventDefault(); dropBlessing(id); };
+            bag.appendChild(wrap);
+          });
+        }
+      }
       function ensureAudioContext(){
         if(!audioCtx){
           const AC = window.AudioContext || window.webkitAudioContext;
@@ -1792,15 +1956,34 @@
           merchant:{shape:'circle', ears:false, accessory:'merchant'},
           villager:{shape:'circle', ears:true, accessory:'basket'},
           villager2:{shape:'triangle', ears:false, accessory:'hammer'},
-          guardianMotor:{shape:'square', ears:true, accessory:'staff', bodyColor:'#f6ddcc'},
-          guardianFiltro:{shape:'circle', ears:true, accessory:'basket', bodyColor:'#f2f7ed'},
-          guardianBocal:{shape:'triangle', ears:false, accessory:'hammer', bodyColor:'#eef6ff'},
+          guardianMotor:{shape:'square', ears:true, accessory:'staff', bodyColor:'#c86c3a'},
+          guardianFiltro:{shape:'circle', ears:true, accessory:'basket', bodyColor:'#5aa06e'},
+          guardianBocal:{shape:'triangle', ears:false, accessory:'hammer', bodyColor:'#6ba8c9'},
           acaroLord:{shape:'circle', ears:false, accessory:'merchant', bodyColor:'#e8cfd5', eyeCount:2}
         };
-        drawCreatureSprite(pctx, 42, 42, 1.35, {...(map[kind] || map.villager), noStroke:true});
+        if(!drawSpecialPortrait(pctx, kind)) drawCreatureSprite(pctx, 42, 42, 1.35, {...(map[kind] || map.villager), noStroke:true});
         pctx.strokeStyle = 'rgba(244,233,201,.15)'; pctx.strokeRect(6.5,6.5,w-13,h-13);
       }
 
+      function drawSpecialPortrait(p, kind){
+        if(kind === 'vacuum'){
+          p.fillStyle = 'rgba(143,211,255,.25)'; p.beginPath(); p.arc(36, 47, 26, 0, Math.PI*2); p.fill();
+          p.fillStyle = '#344149'; p.fillRect(18, 34, 36, 26); p.strokeStyle = '#b6c3cb'; p.lineWidth = 2; p.strokeRect(18, 34, 36, 26);
+          p.fillStyle = '#0c1012'; p.beginPath(); p.arc(30, 47, 6, 0, Math.PI*2); p.fill();
+          p.fillStyle = '#66737c'; p.fillRect(54, 42, 18, 10);
+          p.strokeStyle = '#66737c'; p.lineWidth = 4; p.beginPath(); p.moveTo(20, 36); p.bezierCurveTo(8, 30, 10, 16, 24, 14); p.stroke();
+          return true;
+        }
+        if(kind === 'acaroLord'){
+          p.strokeStyle = '#5a1820'; p.lineWidth = 4;
+          for(let i = 0; i < 8; i++){ const a = i*Math.PI/4; p.beginPath(); p.moveTo(42, 46); p.lineTo(42 + Math.cos(a)*34, 46 + Math.sin(a)*30); p.stroke(); }
+          p.fillStyle = '#2a0e13'; p.beginPath(); p.ellipse(42, 46, 22, 17, 0, 0, Math.PI*2); p.fill();
+          p.fillStyle = '#ff6464'; for(let i = -1; i <= 1; i++){ p.beginPath(); p.arc(42 + i*9, 42, 3.5, 0, Math.PI*2); p.fill(); }
+          p.strokeStyle = '#d9b650'; p.lineWidth = 3; p.beginPath(); p.moveTo(30, 26); p.lineTo(42, 16); p.lineTo(54, 26); p.stroke();
+          return true;
+        }
+        return false;
+      }
       function getPortraitKindForSpeaker(name){
         if(name==='VELHO SABIO') return 'sage';
         if(name==='MERCADOR') return 'merchant';
@@ -1810,7 +1993,7 @@
         if(name==='GUARDIÃO DO FILTRO') return 'guardianFiltro';
         if(name==='GUARDIÃO DO BOCAL') return 'guardianBocal';
         if(name==='LORDE ÁCARO') return 'acaroLord';
-        if(name==='ASPIRADOR SAGRADO') return 'merchant';
+        if(name==='ASPIRADOR SAGRADO') return 'vacuum';
         return 'villager';
       }
 
@@ -1970,7 +2153,7 @@
         vctx.strokeStyle = hasSacredVacuum ? '#b6c3cb' : '#777'; vctx.lineWidth = 4; vctx.strokeRect(170,97,42,18);
         // relic sockets around
         const socketDefs = [
-          {x:74,y:72,id:'motor_sagrado'},{x:268,y:72,id:'filtro_guardiao'},{x:62,y:240,id:'bocal_purificacao'},{x:275,y:240,id:'mangueira_celeste'},{x:170,y:268,id:'bateria_antiga'}
+          {x:74,y:72,id:'motor_sagrado'},{x:268,y:72,id:'filtro_guardiao'},{x:62,y:240,id:'bocal_purificacao'},{x:275,y:240,id:'mangueira_celeste'},{x:170,y:268,id:'bateria_antiga'},{x:170,y:36,id:'camara_compressao'}
         ];
         socketDefs.forEach(s=>{
           const installed = hasInstalledRelic(s.id);
@@ -2024,14 +2207,13 @@
       function toggleSacredVacuumScreen(){
         const overlay = document.getElementById('sacred-vacuum-screen');
         if(!overlay) return;
-        if(overlay.style.display === 'flex'){
-          overlay.style.display = 'none';
-          isPaused = false;
-        } else {
+        if(overlay.style.display === 'flex') overlay.style.display = 'none';
+        else {
+          if(!canOpenOverlay('sacred-vacuum-screen')) return;
           renderSacredVacuumScreen();
           overlay.style.display = 'flex';
-          isPaused = true;
         }
+        syncPause();
       }
 
       function acquireSacredVacuum(){
@@ -2169,7 +2351,7 @@
         if (vacuumBtn) {
           vacuumBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (hasSacredVacuum && player.vacuumCharge >= player.maxVacuumCharge && !isSuperVacuumActive && !isGameOver && !isPaused) {
+            if (false) {
               isSuperVacuumActive = true;
               player.vacuumCharge = 0;
               playVacuumBurstSfx();
@@ -2230,6 +2412,10 @@
         
         const pauseBtn = document.getElementById('pauseBtn');
         if (pauseBtn) pauseBtn.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); });
+        const expelBtn = document.getElementById('expelBtn');
+        if (expelBtn) expelBtn.addEventListener('touchstart', (e) => { e.preventDefault(); expelEnergy(); });
+        const vortexBtn = document.getElementById('vortexBtn');
+        if (vortexBtn) vortexBtn.addEventListener('touchstart', (e) => { e.preventDefault(); castVortex(); });
                 
   
         canvas.addEventListener('touchmove', (e) => {
@@ -2306,25 +2492,26 @@
       }
 
       function showNotification(text) {
-        const muted = [
-          'SALA PURIFICADA', 'AREA CONTAMINADA', 'BENÇÃO ATIVA', 'BENCAO ATIVA', 'EQUIPADA.', 'já está ativa', 'JA ESTA ATIVA'
-        ];
+        const muted = ['SALA PURIFICADA', 'AREA CONTAMINADA', 'BENÇÃO ATIVA', 'BENCAO ATIVA', 'EQUIPADA.', 'já está ativa', 'JA ESTA ATIVA'];
         if(muted.some(m => text.includes(m))) return;
-        const now = Date.now();
-        if(now < notificationCooldown) return;
-        notificationCooldown = now + 850;
-        let div = document.createElement('div');
+        let stack = document.getElementById('notify-stack');
+        if(!stack){ stack = document.createElement('div'); stack.id = 'notify-stack'; document.body.appendChild(stack); }
+        const msg = text.length > 70 ? text.slice(0, 70) + '…' : text;
+        if(Array.prototype.some.call(stack.children, c => c.textContent === msg)) return;
+        while(stack.children.length >= 3) stack.firstChild.remove();
+        const div = document.createElement('div');
         div.className = 'item-notification';
-        div.textContent = text.length > 42 ? text.slice(0,42) + '…' : text;
-        document.body.appendChild(div);
-        setTimeout(()=>div.remove(),1200);
+        div.textContent = msg;
+        stack.appendChild(div);
+        setTimeout(() => div.remove(), 2000);
       }
 
       function spawnPowerUpItem(x,y,id) { powerUpItems.push({x,y,type:'powerup',powerUpId:id,size:20}); }
 
       function getShopPrice(itemId, slotIndex){
         const basePrices = { laminas: 28, estatico: 24, roomba: 32, escudo: 24, dash: 20, ima: 18, congelamento: 26 };
-        return (basePrices[itemId] || 22) + slotIndex * 3;
+        const rm = {comum: 1, raro: 1.4, epico: 1.9, lendario: 2.6}[(availablePowerUps[itemId] || {}).rarity || 'comum'] || 1;
+        return Math.round(((basePrices[itemId] || 22) + slotIndex * 3)*rm);
       }
 
       function getShopStock(roomKey){
@@ -2354,7 +2541,7 @@
 
       function tryBuyShopItem(item){
         if(item.sold) return;
-        if(equippedItems.includes(item.powerUpId)){
+        if(equippedItems.includes(item.powerUpId) || inventory.includes(item.powerUpId)){
           showNotification('ESSA BENCAO JA ESTA ATIVA.');
           shopBuyCooldown = 35;
           return;
@@ -2374,7 +2561,7 @@
 
         if(equippedItems.length >= MAX_EQUIPPED){
           pendingBlessing = item.powerUpId;
-          showNotification('BENCAOS CHEIAS. ESCOLHA UMA PARA SUBSTITUIR.');
+          showNotification('BÊNÇÃOS CHEIAS. ESCOLHA UMA PARA SUBSTITUIR.');
           renderBlessingMenu();
           const overlay = document.getElementById('re-inventory');
           if(overlay){ overlay.style.display='flex'; isPaused=true; }
@@ -2420,6 +2607,7 @@
       }
       
       function collectPowerUp(item) {
+        if(item.dropped){ const k = currentPos.x + ',' + currentPos.y; roomDrops[k] = (roomDrops[k] || []).filter(d => d.id !== item.powerUpId); }
         addBlessing(item.powerUpId, 'encontrada');
       }
 
@@ -2435,9 +2623,8 @@
           return false;
         }
         if(equippedItems.length < MAX_EQUIPPED) {
-          equippedItems.push(id);
-          showNotification(`BENÇÃO ATIVA: ${availablePowerUps[id].name}`);
-          if(id==='roomba' && !roombaActive) spawnRoomba();
+          equippedItems.push(id); startBlessingPopup(id);
+          
           applyBlessingSideEffects(id);
           updateUI(); updateBuildCounter(); updateREEquippedInfo(); renderBlessingMenu(); saveGame();
           return true;
@@ -2451,14 +2638,14 @@
       }
 
       function applyBlessingSideEffects(id){
-        if(id === 'roomba' && !roombaActive) spawnRoomba();
+        
       }
 
       function replaceBlessingSlot(index){
         if(!pendingBlessing || index < 0 || index >= equippedItems.length) return;
         const removed = equippedItems[index];
         if(removed === 'roomba') roombaActive = null;
-        equippedItems[index] = pendingBlessing;
+        equippedItems[index] = pendingBlessing; startBlessingPopup(pendingBlessing);
         applyBlessingSideEffects(pendingBlessing);
         showNotification(`${availablePowerUps[pendingBlessing].name} SUBSTITUIU ${availablePowerUps[removed]?.name || 'BENÇÃO'}.`);
         pendingBlessing = null;
@@ -2480,40 +2667,55 @@
 
       function spawnRoomba() {
         if(roombaActive) return;
-        roombaActive = { x:player.x, y:player.y, size:20, hp:30, maxHp:30, vx:0, vy:0, lastShot:0 };
+        roombaActive = { x:player.x, y:player.y, size:20, hp:40, maxHp:40, vx:0, vy:0, lastShot:0, hurt:0 };
       }
       
+      function summonRoomba(){
+        if(inHub || isPaused || isGameOver || dialogueState.active) return;
+        if(!isItemEquipped('roomba')){ showNotification('EQUIPE O ROOMBA PRIMEIRO.'); return; }
+        if(roombaActive) return;
+        if(roombaCooldown > 0){ showNotification('ROOMBA RECARREGANDO: ' + Math.ceil(roombaCooldown/60) + 'S'); return; }
+        spawnRoomba();
+        createParticles(player.x+14, player.y+14, '#8fd3ff', 12, 3);
+      }
+
       function updateRoomba() {
+        if(roombaCooldown > 0) roombaCooldown--;
+        if(freezeCooldown > 0) freezeCooldown--;
+        if(shieldCooldown > 0){ shieldCooldown--; if(shieldCooldown === 0) shieldHP = SHIELD_MAX; }
         if(!roombaActive) return;
-        let closest=null, closestDist=Infinity;
+        let closest = null, closestDist = Infinity;
         for(let en of enemies){
           if(en.isBoss) continue;
-          let dx = roombaActive.x - (en.x+en.size/2);
-          let dy = roombaActive.y - (en.y+en.size/2);
-          let d = dx*dx+dy*dy;
-          if(d < closestDist){ closestDist=d; closest=en; }
+          const dx = roombaActive.x - (en.x+en.size/2), dy = roombaActive.y - (en.y+en.size/2);
+          const d = dx*dx + dy*dy;
+          if(d < closestDist){ closestDist = d; closest = en; }
         }
-        if(closest) {
-          let dx = closest.x+closest.size/2 - roombaActive.x;
-          let dy = closest.y+closest.size/2 - roombaActive.y;
-          let len = Math.sqrt(dx*dx+dy*dy);
-          if(len>0.01){
-            roombaActive.vx += (dx/len)*0.5;
-            roombaActive.vy += (dy/len)*0.5;
-          }
+        if(closest){
+          const dx = closest.x+closest.size/2 - roombaActive.x, dy = closest.y+closest.size/2 - roombaActive.y;
+          const len = Math.sqrt(dx*dx + dy*dy);
+          if(len > 0.01){ roombaActive.vx += (dx/len)*0.5; roombaActive.vy += (dy/len)*0.5; }
         }
-        roombaActive.vx*=0.9; roombaActive.vy*=0.9;
-        roombaActive.x+=roombaActive.vx; roombaActive.y+=roombaActive.vy;
-        roombaActive.x=Math.max(10,Math.min(790,roombaActive.x)); roombaActive.y=Math.max(10,Math.min(590,roombaActive.y));
+        roombaActive.vx *= 0.9; roombaActive.vy *= 0.9;
+        roombaActive.x += roombaActive.vx; roombaActive.y += roombaActive.vy;
+        roombaActive.x = Math.max(10, Math.min(790, roombaActive.x)); roombaActive.y = Math.max(10, Math.min(590, roombaActive.y));
+        if(roombaActive.hurt > 0) roombaActive.hurt--;
         for(let en of enemies){
-          let dx = roombaActive.x - (en.x+en.size/2);
-          let dy = roombaActive.y - (en.y+en.size/2);
-          if(dx*dx+dy*dy < 900 && Date.now()-roombaActive.lastShot>500){
-            en.hp-=5; roombaActive.lastShot=Date.now();
-            if(particles.length < MAX_PARTICLES) createParticles(roombaActive.x,roombaActive.y,"#0FF",3);
+          const dx = roombaActive.x - (en.x+en.size/2), dy = roombaActive.y - (en.y+en.size/2);
+          const d2 = dx*dx + dy*dy;
+          if(d2 < 900 && Date.now() - roombaActive.lastShot > 500){
+            en.hp -= 5; roombaActive.lastShot = Date.now();
+            if(particles.length < MAX_PARTICLES) createParticles(roombaActive.x, roombaActive.y, '#0FF', 3);
+          }
+          if(d2 < (en.size/2+12)*(en.size/2+12) && roombaActive.hurt <= 0){
+            roombaActive.hp -= en.isBoss ? 4 : 2; roombaActive.hurt = 40;
           }
         }
-        if(roombaActive.hp<=0) roombaActive=null;
+        if(roombaActive.hp <= 0){
+          createParticles(roombaActive.x, roombaActive.y, '#8fd3ff', 14, 4);
+          roombaActive = null; roombaCooldown = 900;
+          showNotification('ROOMBA DESTRUIDO. VOLTA EM 15S.');
+        }
       }
       
       function drawRoomba() {
@@ -2677,12 +2879,22 @@
         saveShootModeSetting();
         saveGame();
       }
+      function canOpenOverlay(self){
+        const open = id => { const el = document.getElementById(id); return !!el && el.style.display === 'flex'; };
+        if(!gameStarted || isGameOver || dialogueState.active) return false;
+        return !['pause-menu','re-inventory','sacred-vacuum-screen'].some(id => id !== self && open(id));
+      }
+      function syncPause(){
+        const open = id => { const el = document.getElementById(id); return !!el && el.style.display === 'flex'; };
+        isPaused = !gameStarted || isGameOver || open('pause-menu') || open('re-inventory') || open('sacred-vacuum-screen');
+        if(isPaused) stopVacuumHum();
+      }
       function togglePause() {
-        if(!isGameOver){
-          isPaused=!isPaused;
-          document.getElementById('pause-menu').style.display=isPaused?'flex':'none';
-          if(isPaused) updateShootModeUI();
-        }
+        if(!gameStarted || isGameOver) return;
+        const pm = document.getElementById('pause-menu');
+        pm.style.display = pm.style.display === 'flex' ? 'none' : 'flex';
+        if(pm.style.display === 'flex') updateShootModeUI();
+        syncPause();
       }
       
       function createParticles(x,y,color,count=8,speed=4){
@@ -2716,6 +2928,7 @@
       
       function collectDust(amount) {
         dustCount = Math.min(999, dustCount + amount);
+        if(player.isVacuuming && hasSacredVacuum) addCharge(amount*1.5, true);
         updateUI();
         updateREEquippedInfo();
       }
@@ -2836,6 +3049,7 @@
         const roomData = getRoomData(posKey);
         ambientObjects = roomData.ambientObjects ? [...roomData.ambientObjects] : [];
         lightPoints = roomData.lightPoints ? [...roomData.lightPoints] : [];
+        (roomDrops[posKey] || []).forEach(d => powerUpItems.push({x: d.x, y: d.y, type: 'powerup', powerUpId: d.id, size: 20, delay: 60, dropped: true}));
         if(direction==='top') player.y=520; if(direction==='bottom') player.y=60; if(direction==='left') player.x=720; if(direction==='right') player.x=60;
         const isBossRoom = roomData.isBossRoom;
         const isShopRoom = roomData.isShopRoom;
@@ -2882,7 +3096,7 @@
           }
           if(Math.random()<0.3 && powerUpItems.length===0){
             let ids = Object.keys(availablePowerUps).filter(id => availablePowerUps[id].type !== 'sagrada');
-            let rnd = ids[Math.floor(Math.random()*ids.length)];
+            let rnd = weightedBlessing(ids);
             if(!inventory.includes(rnd)) spawnPowerUpItem(canvas.width/2,canvas.height/2,rnd);
           }
         }
@@ -2894,6 +3108,7 @@
           document.getElementById('room-info').style.color = '#0FF';
         }
         roomTransitionCooldown = 18;
+        onRoomEnter();
         updateUI(); updateDoors();
       }
 
@@ -2921,7 +3136,7 @@
           if(bdPercent) bdPercent.textContent = `${Math.floor(blackDustLevel)}%`;
           if(bdFill) bdFill.style.width = Math.min(100, blackDustLevel) + '%';
           if(bdStatus){ bdStatus.textContent = bdState.label; bdStatus.style.color = bdState.color; }
-          document.getElementById('equipped-item').innerHTML = equippedItems.length ? `BENCAOS: ${equippedItems.length}/${MAX_EQUIPPED}` : 'BENCAOS: VAZIA';
+          document.getElementById('equipped-item').innerHTML = equippedItems.length ? `BÊNÇÃOS: ${equippedItems.length}/${MAX_EQUIPPED}` : 'BÊNÇÃOS: VAZIA';
           mCtx.clearRect(0,0,140,140);
           mCtx.fillStyle='#120d09'; mCtx.fillRect(0,0,140,140);
           mCtx.strokeStyle='rgba(107,80,54,0.65)'; mCtx.strokeRect(0.5,0.5,139,139);
@@ -2949,8 +3164,8 @@
         fill.style.background = hasSacredVacuum ? (player.vacuumCharge>=player.maxVacuumCharge?"#F0F":"#0FF") : "#3a2b1f";
         if(equippedItems.length){
           let txt = equippedItems.map(id=>availablePowerUps[id].name.split(' ')[0]).join(' | ');
-          document.getElementById('equipped-item').innerHTML = `BENCAOS: ${txt}`;
-        } else document.getElementById('equipped-item').innerHTML = `BENCAOS: VAZIA`;
+          document.getElementById('equipped-item').innerHTML = `BÊNÇÃOS: ${txt}`;
+        } else document.getElementById('equipped-item').innerHTML = `BÊNÇÃOS: VAZIA`;
 
         // Minimapa
         mCtx.clearRect(0,0,140,140);
@@ -3022,7 +3237,7 @@
             mCtx.lineWidth = 2;
             mCtx.strokeRect(x+1, y+1, s-2, s-2);
             mCtx.fillStyle="#e8d6aa";
-            mCtx.font = `${Math.max(10, Math.floor(s*0.8))}px Jersey 10`;
+            mCtx.font = `${Math.max(10, Math.floor(s*0.8))}px "Jersey 10"`;
             mCtx.textAlign = 'center';
             mCtx.fillText('L', cx, cy+4);
           } else if(guardianRooms[roomKey] || roomGraph.get(roomKey)?.isGuardianRoom){
@@ -3033,7 +3248,7 @@
             mCtx.lineWidth = 2;
             mCtx.strokeRect(x+1, y+1, s-2, s-2);
             mCtx.fillStyle = '#e8f5ff';
-            mCtx.font = `${Math.max(9, Math.floor(s*0.8))}px Jersey 10`;
+            mCtx.font = `${Math.max(9, Math.floor(s*0.8))}px "Jersey 10"`;
             mCtx.textAlign = 'center';
             mCtx.fillText('G', cx, cy+4);
           } else if(clearedRooms.has(roomKey)){
@@ -3087,8 +3302,7 @@
           if(!clearedRooms.has(key)){ all=false; break; }
         }
         if(all && !bossDefeated){
-          let div=document.createElement('div'); div.className='item-notification'; div.style.color="#f44";
-          div.innerHTML="VÁ PARA A SALA DO BOSS."; document.body.appendChild(div); setTimeout(()=>div.remove(),3000);
+          showNotification('VÁ PARA A SALA DO BOSS.');
         }
       }
 
@@ -3276,6 +3490,7 @@
       function drawCommonEnemy(en){
         const half = en.size/2;
         ctx.save(); ctx.translate(en.x+half, en.y+half);
+        if(en.suck > 0) ctx.translate((Math.random()-0.5)*3, (Math.random()-0.5)*3);
         if(en.flash>0) ctx.filter="brightness(5)";
         if(en.type==='verme_negro'){
           ctx.strokeStyle='rgba(0,0,0,.85)'; ctx.lineWidth=3;
@@ -3353,6 +3568,25 @@
 
 
       // ---------- VILAREJO / HUB ----------
+      function npcBob(n){ return n.wait > 0 ? 0 : Math.sin(gameTime*10)*2; }
+      function updateHubNPCs(){
+        if(dialogueState.active) return;
+        ['sage', 'merchant', 'villager1', 'villager2'].forEach((k, i) => {
+          const n = hubNPCs[k];
+          if(!n.home){ n.home = {x: n.x, y: n.y}; n.tx = n.x; n.ty = n.y; n.wait = 40 + i*50; }
+          if(Math.hypot(player.x + 14 - n.x, player.y + 14 - n.y) < 60){ n.wait = Math.max(n.wait, 30); return; }
+          if(n.wait > 0){
+            n.wait--;
+            if(n.wait === 0){ const a = Math.random()*Math.PI*2, r = 20 + Math.random()*55; n.tx = n.home.x + Math.cos(a)*r; n.ty = n.home.y + Math.sin(a)*r*0.7; }
+            return;
+          }
+          const dx = n.tx - n.x, dy = n.ty - n.y, d = Math.hypot(dx, dy);
+          if(d < 2){ n.wait = 90 + Math.random()*150; return; }
+          const nx = n.x + dx/d*0.6, ny = n.y + dy/d*0.6;
+          if(!checkCollision(nx - 12, ny - 12, 24, hubObstacles) && Math.hypot(player.x + 14 - nx, player.y + 14 - ny) > 34){ n.x = nx; n.y = ny; }
+          else n.wait = 40;
+        });
+      }
       function distanceToPlayer(x,y){
         const dx = player.x + player.size/2 - x;
         const dy = player.y + player.size/2 - y;
@@ -3388,6 +3622,7 @@
         if(keys['KeyS']) my+=player.speed;
         if(keys['KeyA']) mx-=player.speed;
         if(keys['KeyD']) mx+=player.speed;
+        if(mx && my){ mx *= 0.7071; my *= 0.7071; }
         const nx = player.x + mx;
         const ny = player.y + my;
         if(!checkCollision(nx, player.y, player.size, hubObstacles)) player.x = nx;
@@ -3395,6 +3630,7 @@
         player.x = Math.max(70, Math.min(800-player.size-70, player.x));
         player.y = Math.max(105, Math.min(600-player.size-55, player.y));
 
+        updateHubNPCs();
         if(keys['KeyF'] && hubMessageCooldown<=0){
           if(distanceToPlayer(hubNPCs.gate.x, hubNPCs.gate.y) < hubNPCs.gate.r){
             hubMessageCooldown = 40;
@@ -3436,6 +3672,118 @@
         updateUI();
       }
 
+      function roofPoly(pts, base, dark){
+        const q = pts.map((p, i) => [p[0] + Math.sin(p[0]*0.37 + p[1]*0.21 + i)*3, p[1] + Math.cos(p[0]*0.19 + p[1]*0.43 + i)*3]);
+        ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
+        ctx.fillStyle = base; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#1a120d'; ctx.stroke();
+        ctx.save(); ctx.clip();
+        const ys = q.map(p => p[1]), xs = q.map(p => p[0]), y0 = Math.min(...ys), y1 = Math.max(...ys);
+        ctx.globalAlpha = 0.5; ctx.fillStyle = dark; ctx.fillRect(Math.min(...xs), y0 + (y1 - y0)*0.62, 400, y1);
+        ctx.restore();
+      }
+      function stoneWall(x, y, w, h, col, line){
+        const j = (px, py, i) => [px + Math.sin(px*0.31 + py*0.17 + i)*2.5, py + Math.cos(px*0.23 + py*0.41 + i)*2.5];
+        const p = [j(x, y, 1), j(x + w, y, 2), j(x + w, y + h, 3), j(x, y + h, 4)];
+        ctx.beginPath(); p.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath();
+        ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = '#1a120d'; ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 3, y + h*0.7, w - 6, h*0.3 - 3);
+      }
+      function houseDoor(x, y, w, h){
+        ctx.fillStyle = '#1a120d'; ctx.fillRect(x - 2, y - 2, w + 4, h + 2);
+        ctx.fillStyle = '#4f6a37'; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + w/2 - 1, y, 2, h);
+        ctx.fillStyle = '#d9b650'; ctx.fillRect(x + w - 5, y + h/2, 3, 3);
+      }
+      function houseWindow(x, y, w, h, lit){
+        ctx.fillStyle = '#120d09'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+        ctx.fillStyle = lit ? 'rgba(217,182,80,.6)' : '#2a3a40'; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = '#120d09'; ctx.fillRect(x + w/2 - 1, y, 2, h);
+      }
+      function chimneySmoke(x, y){
+        for(let i = 0; i < 4; i++){
+          const k = (gameTime*0.8 + i*0.25) % 1;
+          ctx.fillStyle = 'rgba(200,190,170,' + (0.28*(1 - k)) + ')';
+          ctx.beginPath(); ctx.arc(x + Math.sin(k*5 + i)*6, y - k*38, 4 + k*7, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      function houseShadow(cx, cy, rx){ ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(cx, cy, rx, 9, 0, 0, Math.PI*2); ctx.fill(); }
+      function drawSwampTree(x, y, s){
+        ctx.fillStyle = '#2c2218'; ctx.fillRect(x - 4*s, y - 70*s, 8*s, 70*s);
+        ctx.fillStyle = '#3a4a34';
+        for(let i = -2; i <= 2; i++){ ctx.beginPath(); ctx.ellipse(x + i*14*s, y - 70*s - Math.abs(i)*3*s, 22*s, 7*s, i*0.12, 0, Math.PI*2); ctx.fill(); }
+      }
+      function drawGiantBug(x, y){
+        ctx.save(); ctx.translate(x, y); ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = '#4b3929'; ctx.lineWidth = 3;
+        for(let i = 0; i < 6; i++){
+          const lx = -30 + i*12, sway = Math.sin(gameTime*2 + i)*3, dir = i < 3 ? -1 : 1;
+          ctx.beginPath(); ctx.moveTo(lx, 10); ctx.lineTo(lx + dir*12 + sway, 40); ctx.lineTo(lx + dir*16 + sway, 78); ctx.stroke();
+        }
+        ctx.fillStyle = '#8d6b45'; ctx.beginPath(); ctx.ellipse(0, 0, 42, 16, -0.15, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#5c4128'; ctx.lineWidth = 2;
+        for(let i = -3; i <= 3; i++){ ctx.beginPath(); ctx.moveTo(i*10, -14); ctx.lineTo(i*10, 14); ctx.stroke(); }
+        ctx.fillStyle = '#a07c52'; ctx.beginPath(); ctx.ellipse(44, 2, 14, 9, 0, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      function drawHubBack(){
+        drawSwampTree(30, 215, 1.2); drawSwampTree(772, 198, 1.1); drawSwampTree(250, 140, 0.7); drawSwampTree(560, 132, 0.7);
+        drawGiantBug(70, 98);
+        ctx.fillStyle = '#1b2a2e';
+        ctx.beginPath(); ctx.ellipse(-20, 500, 80, 58, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(840, 505, 100, 60, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = 'rgba(143,211,255,.22)'; ctx.lineWidth = 1;
+        for(let i = 0; i < 4; i++){ const w = 10 + ((gameTime*6 + i*13) % 36); ctx.beginPath(); ctx.ellipse(770 - i*14, 505 + i*6, w, w*0.35, 0, 0, Math.PI*2); ctx.stroke(); }
+        ctx.fillStyle = '#5a4332'; ctx.fillRect(726, 478, 74, 18);
+        ctx.fillStyle = '#3d2a1d'; for(let x = 730; x < 800; x += 14) ctx.fillRect(x, 478, 2, 18);
+        ctx.fillRect(740, 496, 6, 18); ctx.fillRect(786, 496, 6, 18);
+        const g = ctx.createLinearGradient(0, 0, 0, 170); g.addColorStop(0, 'rgba(201,168,106,.26)'); g.addColorStop(1, 'rgba(201,168,106,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 800, 170);
+      }
+      function drawTowerHouse(x, y){
+        houseShadow(x + 64, y + 90, 66);
+        stoneWall(x + 66, y + 52, 48, 38, '#5c4d40', '#3a2e26');
+        roofPoly([[x + 60, y + 54], [x + 90, y + 36], [x + 122, y + 54]], '#a8845a', '#7a5c3a');
+        stoneWall(x + 14, y + 28, 48, 62, '#6b5a49', '#43362b');
+        roofPoly([[x + 6, y + 32], [x + 38, y - 22], [x + 70, y + 32]], '#b99662', '#8d7356');
+        houseWindow(x + 33, y + 44, 8, 14, true);
+        houseDoor(x + 84, y + 68, 16, 22);
+        chimneySmoke(x + 98, y + 36);
+      }
+      function drawStoneCottage(x, y){
+        houseShadow(x + 70, y + 100, 74);
+        stoneWall(x + 8, y + 46, 112, 54, '#5a4a3c', '#3a2e26');
+        roofPoly([[x - 4, y + 50], [x + 26, y + 8], [x + 112, y + 8], [x + 140, y + 50]], '#b99662', '#8d7356');
+        ctx.fillStyle = '#8d7356'; ctx.fillRect(x + 26, y + 6, 86, 4);
+        stoneWall(x + 104, y - 4, 16, 36, '#6b5a49', '#43362b');
+        chimneySmoke(x + 112, y - 4);
+        houseDoor(x + 22, y + 70, 24, 30); houseWindow(x + 62, y + 66, 16, 14, true); houseWindow(x + 90, y + 66, 14, 14, false);
+      }
+      function drawTimberHouse(x, y){
+        houseShadow(x + 54, y + 90, 62);
+        ctx.fillStyle = '#b9a784'; ctx.fillRect(x + 4, y + 50, 100, 38);
+        ctx.fillStyle = '#c8b894'; ctx.fillRect(x - 2, y + 22, 112, 30);
+        ctx.strokeStyle = '#3d2a1d'; ctx.lineWidth = 3;
+        ctx.strokeRect(x - 2, y + 22, 112, 30); ctx.strokeRect(x + 4, y + 50, 100, 38);
+        for(let i = 1; i < 4; i++){ ctx.beginPath(); ctx.moveTo(x - 2 + i*28, y + 22); ctx.lineTo(x - 2 + i*28, y + 52); ctx.stroke(); }
+        ctx.beginPath(); ctx.moveTo(x + 4, y + 88); ctx.lineTo(x + 54, y + 50); ctx.lineTo(x + 104, y + 88); ctx.stroke();
+        houseWindow(x + 10, y + 30, 14, 14, true); houseWindow(x + 80, y + 30, 14, 14, false); houseWindow(x + 60, y + 60, 12, 12, true);
+        houseDoor(x + 22, y + 62, 18, 26);
+        ctx.fillStyle = '#4b3f35'; ctx.fillRect(x + 4, y + 84, 100, 6);
+        roofPoly([[x - 10, y + 24], [x + 54, y - 22], [x + 118, y + 24]], '#6b4a30', '#4a3322');
+        stoneWall(x + 84, y - 18, 14, 34, '#6b5a49', '#43362b');
+        chimneySmoke(x + 91, y - 18);
+      }
+      function drawLongCottage(x, y){
+        houseShadow(x + 68, y + 94, 72);
+        stoneWall(x + 6, y + 48, 124, 46, '#4f5560', '#34393f');
+        roofPoly([[x - 6, y + 52], [x + 22, y + 12], [x + 116, y + 12], [x + 142, y + 52]], '#a8845a', '#7a5c3a');
+        ctx.fillStyle = '#6b4a30'; ctx.fillRect(x + 22, y + 10, 94, 4);
+        houseDoor(x + 90, y + 68, 22, 26); houseWindow(x + 24, y + 66, 14, 12, true); houseWindow(x + 52, y + 66, 14, 12, false);
+        ctx.fillStyle = 'rgba(217,182,80,.35)'; ctx.beginPath(); ctx.arc(x + 82, y + 70, 10, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#d9b650'; ctx.fillRect(x + 80, y + 66, 4, 6);
+        ctx.fillStyle = '#5a4332'; ctx.fillRect(x + 118, y + 74, 14, 20); ctx.strokeStyle = '#2a1c12'; ctx.strokeRect(x + 118, y + 74, 14, 20);
+        chimneySmoke(x + 36, y + 12);
+      }
       function drawHubGround(){
         ctx.fillStyle = '#17100b'; ctx.fillRect(0,0,800,600);
         const grad = ctx.createRadialGradient(400,300,60,400,300,540);
@@ -3484,10 +3832,11 @@
           ctx.fillStyle= lit ? '#8c3d32' : '#5a4b3f'; ctx.beginPath(); ctx.moveTo(22,-18); ctx.lineTo(40,-14); ctx.lineTo(22,-9); ctx.closePath(); ctx.fill();
           ctx.restore();
         }
-        drawHumanCastle(46,142,120,88,false,false);
-        drawHumanCastle(22,332,136,102,false,true);
-        drawHumanCastle(740,148,118,96,true,true);
-        drawHumanCastle(748,340,132,96,true,true);
+        drawHubBack();
+        drawTowerHouse(46,142);
+        drawStoneCottage(22,332);
+        drawTimberHouse(648,150);
+        drawLongCottage(642,338);
 
         // praça central arredondada / poço
         ctx.fillStyle='#2d2118';
@@ -3543,24 +3892,42 @@
         ctx.restore();
       }
 
+      const promptAlpha = {};
+      function fadePrompt(id, text, x, y, on){
+        let a = (promptAlpha[id] || 0) + (on ? 0.07 : -0.07);
+        a = Math.max(0, Math.min(1, a)); promptAlpha[id] = a;
+        if(a <= 0) return;
+        ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.font = '24px VT323';
+        ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(8,5,3,.95)'; ctx.fillStyle = '#f4e9c9';
+        const yy = y + (1 - a)*8;
+        ctx.strokeText(text, x, yy); ctx.fillText(text, x, yy);
+        ctx.restore();
+      }
+      function drawHubPrompt(){
+        const defs = [['gate', 'APERTE F PARA ENTRAR NAS RUÍNAS'], ['sage', 'APERTE F PARA OUVIR O VELHO SÁBIO'], ['merchant', 'APERTE F PARA FALAR COM O MERCADOR'], ['villager1', 'APERTE F PARA OUVIR A MORADORA'], ['villager2', 'APERTE F PARA OUVIR O ARTESÃO']];
+        let shown = false;
+        defs.forEach(d => {
+          const n = hubNPCs[d[0]];
+          const near = !shown && !dialogueState.active && distanceToPlayer(n.x, n.y) < n.r;
+          if(near) shown = true;
+          fadePrompt('hub' + d[0], d[1], n.x, n.y - (d[0] === 'gate' ? 50 : 44), near);
+        });
+      }
+      function drawDungeonPrompts(){
+        fadePrompt('altar', 'APERTE F PARA TOMAR O ASPIRADOR', 400, 215, isNearSacredVacuumAltar());
+        drawBlessingPopup();
+      }
       function drawHub(){
         ctx.clearRect(0,0,800,600);
         ctx.save();
         if(shakeTime>0) ctx.translate((Math.random()-0.5)*shakeTime, (Math.random()-0.5)*shakeTime);
         drawHubGround();
-        drawSage(hubNPCs.sage.x, hubNPCs.sage.y);
-        drawHubMerchant(hubNPCs.merchant.x, hubNPCs.merchant.y);
-        drawHubVillager(hubNPCs.villager1.x, hubNPCs.villager1.y, 'MORADORA', 1);
-        drawHubVillager(hubNPCs.villager2.x, hubNPCs.villager2.y, 'ARTESAO', 2);
+        drawSage(hubNPCs.sage.x, hubNPCs.sage.y + npcBob(hubNPCs.sage));
+        drawHubMerchant(hubNPCs.merchant.x, hubNPCs.merchant.y + npcBob(hubNPCs.merchant));
+        drawHubVillager(hubNPCs.villager1.x, hubNPCs.villager1.y + npcBob(hubNPCs.villager1), 'MORADORA', 1);
+        drawHubVillager(hubNPCs.villager2.x, hubNPCs.villager2.y + npcBob(hubNPCs.villager2), 'ARTESAO', 2);
         drawPlayerArt();
-        ctx.save(); ctx.textAlign='center'; ctx.font='24px VT323'; ctx.fillStyle='#f4e9c9';
-        if(distanceToPlayer(hubNPCs.gate.x, hubNPCs.gate.y) < hubNPCs.gate.r) ctx.fillText('APERTE F PARA ENTRAR NAS RUINAS',400,505);
-        else if(distanceToPlayer(hubNPCs.sage.x, hubNPCs.sage.y) < hubNPCs.sage.r) ctx.fillText('APERTE F PARA OUVIR O VELHO SABIO',400,505);
-        else if(distanceToPlayer(hubNPCs.merchant.x, hubNPCs.merchant.y) < hubNPCs.merchant.r) ctx.fillText('APERTE F PARA FALAR COM O MERCADOR',400,505);
-        else if(distanceToPlayer(hubNPCs.villager1.x, hubNPCs.villager1.y) < hubNPCs.villager1.r) ctx.fillText('APERTE F PARA OUVIR A MORADORA',400,505);
-        else if(distanceToPlayer(hubNPCs.villager2.x, hubNPCs.villager2.y) < hubNPCs.villager2.r) ctx.fillText('APERTE F PARA OUVIR O ARTESAO',400,505);
-        else ctx.fillText('VILAREJO DOS SOBREVIVENTES',400,505);
-        ctx.restore();
+        drawHubPrompt();
         drawFloatingTexts();
         drawWorldHoverTooltip();
         ctx.restore();
@@ -3578,8 +3945,8 @@
 
       function getBlackDustState(level){
         if(level >= 85) return { label:'COLAPSO', color:'#ff6b4a' };
-        if(level >= 65) return { label:'CRITICA', color:'#d94a3a' };
-        if(level >= 35) return { label:'AVANCANDO', color:'#b99662' };
+        if(level >= 65) return { label:'CRÍTICA', color:'#d94a3a' };
+        if(level >= 35) return { label:'AVANÇANDO', color:'#b99662' };
         return { label:'DORMENTE', color:'#b99662' };
       }
 
@@ -3618,7 +3985,7 @@
           blackDustLastMilestone = stage;
           const msgs = [
             '',
-            'A POEIRA NEGRA COMECou A SE ESPALHAR',
+            'A POEIRA NEGRA COMEÇOU A SE ESPALHAR',
             'A CORRUPCAO TOMOU PARTE DA CIDADE',
             'OS VERMES RESPONDEM AO CHAMADO',
             'A CIDADE ESTA A BEIRA DO COLAPSO'
@@ -3710,6 +4077,7 @@
         if(keys['KeyS']) my+=player.speed;
         if(keys['KeyA']) mx-=player.speed;
         if(keys['KeyD']) mx+=player.speed;
+        if(mx && my){ mx *= 0.7071; my *= 0.7071; }
         player.vx*=0.85; player.vy*=0.85;
         let fx=player.x+mx+player.vx, fy=player.y+my+player.vy;
         if(!checkCollision(player.x, fy, player.size, roomData.obstacles)) player.y = fy;
@@ -3729,6 +4097,7 @@
         // Coleta power-ups
         for(let i=powerUpItems.length-1;i>=0;i--){
           let pu=powerUpItems[i];
+          if(pu.delay > 0){ pu.delay--; continue; }
           let dx=player.x+14-pu.x, dy=player.y+14-pu.y;
           if(dx*dx+dy*dy<900){
             collectPowerUp(pu); createParticles(pu.x,pu.y,"#FFD700",8,3);
@@ -3757,7 +4126,7 @@
               items.splice(i,1);
             }
             else if(!it.isMimic){ 
-              player.hp=Math.min(player.maxHp,player.hp+2); 
+              player.hp=Math.min(player.maxHp,player.hp+(it.type==='essence' ? 1 : 2)); 
               updateUI(); 
               items.splice(i,1);
             }
@@ -3778,7 +4147,7 @@
           if(p.life<=0) particles.splice(i,1); 
         }
         
-        if(isItemEquipped('magnet') && Math.random()<0.02) player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+1);
+        if(isItemEquipped('magnet') && Math.random()<0.02) addCharge(1, false);
 
         // Ralos de poeira: substituem os ventiladores e puxam tudo levemente para o centro
         for(let obj of ambientObjects){
@@ -3832,9 +4201,10 @@
           let t=bossTraps[i];
           t.life--;
           if(t.life<=0){ bossTraps.splice(i,1); continue; }
+          if(t.warn > 0){ t.warn--; continue; }
           let dx=player.x+14-t.x, dy=player.y+14-t.y;
           if(dx*dx+dy*dy<625 && !player.invincible){
-            player.hp--; updateUI(); player.invincible=true; shakeTime=10;
+            hurtPlayer(1); updateUI(); player.invincible=true; shakeTime=10; if(player.hp<=0) onPlayerDeath();
             setTimeout(()=>player.invincible=false,500);
             if(particles.length < MAX_PARTICLES) createParticles(t.x,t.y,"#f60",5);
           }
@@ -3847,105 +4217,10 @@
           const distSq = dxp*dxp + dyp*dyp;
           if(en.flash>0) en.flash--;
           if(en.slow>0) en.slow--;
-          let eSpeed = en.slow>0 ? en.speed*0.3 : en.speed;
+          let eSpeed = (en.slow>0 ? en.speed*0.3 : en.speed)*(isItemEquipped('corecorrupt') ? 1.15 : 1);
 
           if(en.isBoss){
-            let ang = Math.atan2(dyp, dxp);
-            en.x += Math.cos(ang)*eSpeed;
-            en.y += Math.sin(ang)*eSpeed;
-            clampEntityToRoom(en, en.size, false);
-            if(en.attackTimer<=0){
-              en.attackTimer = 120;
-              switch(en.special){
-                case 'fangBurst':
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS - 6){
-                    playEnemyShotSfx();
-                    let base = Math.atan2(dyp, dxp);
-                    for(let i=-2;i<=2;i++){
-                      let ang = base + i*0.18;
-                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*5.5, vy:Math.sin(ang)*5.5});
-                    }
-                    for(let i=0;i<2;i++){
-                      let side = base + (i===0 ? -0.55 : 0.55);
-                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(side)*4.2, vy:Math.sin(side)*4.2});
-                    }
-                    shakeTime = 4;
-                    createParticles(enCX,enCY,'#b98563',10,3);
-                  }
-                  break;
-                case 'spawnMinions':
-                  if(enemies.length < MAX_ENEMIES) {
-                    for(let i=0;i<2;i++){
-                      let ang = Math.random()*2*Math.PI;
-                      spawnEnemy(enCX+Math.cos(ang)*60, enCY+Math.sin(ang)*60, 'tufo', false);
-                    }
-                  }
-                  break;
-                case 'explosiveShots':
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS) {
-                    playEnemyShotSfx();
-                    for(let i=0;i<3;i++){
-                      let ang = Math.random()*2*Math.PI;
-                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*6, vy:Math.sin(ang)*6, explosive:true});
-                    }
-                  }
-                  break;
-                case 'spiralShots':
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS) {
-                    playEnemyShotSfx();
-                    for(let i=0;i<6;i++){
-                      let ang = i*Math.PI*2/6 + gameTime*2;
-                      enemyBullets.push({x:enCX, y:enCY, vx:Math.cos(ang)*5, vy:Math.sin(ang)*5});
-                    }
-                  }
-                  break;
-                case 'spawnMobs':
-                  if(enemies.length < MAX_ENEMIES) {
-                    for(let i=0;i<2;i++){
-                      let ang = Math.random()*2*Math.PI;
-                      spawnEnemy(enCX+Math.cos(ang)*50, enCY+Math.sin(ang)*50, 'esporo', false);
-                    }
-                  }
-                  break;
-                case 'ringShots':
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS){
-                    playEnemyShotSfx();
-                    for(let i=0;i<10;i++){ let ang=i*Math.PI*2/10; enemyBullets.push({x:enCX,y:enCY,vx:Math.cos(ang)*4.2,vy:Math.sin(ang)*4.2}); }
-                  }
-                  break;
-                case 'totemHeal': {
-                  const acolytesAlive = enemies.filter(e => e.type === 'acolito_poeira').length;
-                  if(enemies.length < MAX_ENEMIES && acolytesAlive < 2) {
-                    const spawnAng = Math.random()*Math.PI*2;
-                    spawnEnemy(enCX+Math.cos(spawnAng)*70,enCY+Math.sin(spawnAng)*70,'acolito_poeira',false);
-                  }
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS){
-                    playEnemyShotSfx();
-                    for(let i=0;i<4;i++){
-                      let ang=i*Math.PI/2+Math.PI/4;
-                      enemyBullets.push({x:enCX,y:enCY,vx:Math.cos(ang)*4.4,vy:Math.sin(ang)*4.4});
-                    }
-                  }
-                  break;
-                }
-                case 'eggBurst':
-                  if(enemies.length < MAX_ENEMIES){ for(let i=0;i<3;i++){ let ang=Math.random()*2*Math.PI; spawnEnemy(enCX+Math.cos(ang)*60,enCY+Math.sin(ang)*60,'larva_negra',false);} }
-                  break;
-                case 'royalStorm':
-                  if(enemyBullets.length < MAX_ENEMY_BULLETS){ playEnemyShotSfx(); for(let i=0;i<12;i++){ let ang=i*Math.PI*2/12 + gameTime; enemyBullets.push({x:enCX,y:enCY,vx:Math.cos(ang)*5.2,vy:Math.sin(ang)*5.2}); } }
-                  if(enemies.length < MAX_ENEMIES && Math.random()<0.6) spawnEnemy(enCX+50*Math.cos(gameTime),enCY+50*Math.sin(gameTime),'elite_mite',false);
-                  break;
-              }
-            } else en.attackTimer--;
-            en.trapCooldown--;
-            if(en.trapCooldown<=0 && Math.random()<0.01 && bossTraps.length < MAX_BOSS_TRAPS){
-              en.trapCooldown=180;
-              let trapCount = Math.min(2, MAX_BOSS_TRAPS - bossTraps.length);
-              for(let i=0;i<trapCount;i++){
-                let ang = Math.random()*2*Math.PI, rad = 80+Math.random()*60;
-                bossTraps.push({x:enCX+Math.cos(ang)*rad, y:enCY+Math.sin(ang)*rad, life:90, radius:20});
-              }
-            }
+            updateBoss(en, enCX, enCY, dxp, dyp, eSpeed);
           } else if(en.isGuardian){
             let ang = Math.atan2(dyp, dxp);
             en.x += Math.cos(ang)*eSpeed;
@@ -4036,18 +4311,7 @@
               if(!checkCollision(en.x, newY, en.size, roomData.obstacles)) en.y = newY;
             }
           }
-          const vRange = getVacuumRange();
-          if(player.isVacuuming && distSq < vRange*vRange && !en.isGuardian){
-            let ang = Math.atan2(enCY-(player.y+14), enCX-(player.x+14));
-            if(isSuperVacuumActive){
-              en.vx -= Math.cos(ang)*12; en.vy -= Math.sin(ang)*12;
-              if(distSq < (50+en.size/2)*(50+en.size/2)) en.hp-=5;
-            } else {
-              const pull = getVacuumPull();
-              en.vx -= Math.cos(ang)*pull; en.vy -= Math.sin(ang)*pull;
-            }
-            if(hasRelicActive('bocal_purificacao')) en.hp -= (en.type==='verme_negro' || en.type==='larva_negra') ? 0.6 : 0.3;
-          }
+          
           if(Math.abs(en.vx) > 0.02 || Math.abs(en.vy) > 0.02){
             let pushX = en.x + en.vx;
             let pushY = en.y + en.vy;
@@ -4057,16 +4321,16 @@
             clampEntityToRoom(en, en.size, false);
           }
           if(distSq < (en.size/2+12)*(en.size/2+12) && !player.invincible){
-            player.hp -= en.isBoss?2:1; playHitSfx(); updateUI(); player.invincible=true; shakeTime=20;
+            hurtPlayer(en.isBoss?2:1); playHitSfx(); updateUI(); player.invincible=true; shakeTime=20;
             let knock = Math.atan2(dyp, dxp);
             player.vx = Math.cos(knock)*25; player.vy = Math.sin(knock)*25;
-            if(player.hp<=0){ isGameOver=true; isPaused=true; }
+            if(player.hp<=0) onPlayerDeath();
             setTimeout(()=>player.invincible=false,800);
           }
         }
 
         // Tiro
-        if(hasSacredVacuum && Date.now()-player.lastShot > player.shotDelay && bullets.length < MAX_BULLETS){
+        if(hasSacredVacuum && Date.now()-player.lastShot > (isItemEquipped('bronze') ? player.shotDelay*(0.5 + 0.5*Math.max(0, player.hp)/player.maxHp) : player.shotDelay) && bullets.length < MAX_BULLETS){
           let shootX = 0, shootY = 0;
           if(shootingMode === 'arrows'){
             if(hasArrowAimInput()){
@@ -4094,8 +4358,17 @@
             for(let en of enemies){
               let dx=b.x-(en.x+en.size/2), dy=b.y-(en.y+en.size/2);
               if(dx*dx+dy*dy < (en.size/2)*(en.size/2)){
-                en.hp-=(en.armored ? 6 : 10); en.flash=2; playEnemyVoice(en.isBoss ? 'boss' : (en.type==='verme_negro'?'worm':'enemy')); hit=true; b.hitEnemy=true;
-                if(isItemEquipped('freeze')) en.slow=60;
+                en.hp-=(en.armored ? 6 : 10)*bossDmgMult(en)*playerDmgMult();
+                if(isItemEquipped('crystal') && Math.random() < 0.15) crystalBlast(b.x, b.y, en); en.flash=2; playEnemyVoice(en.isBoss ? 'boss' : (en.type==='verme_negro'?'worm':'enemy')); hit=true; b.hitEnemy=true;
+                if(isItemEquipped('freeze') && freezeCooldown <= 0){
+                  freezeCooldown = 480;
+                  for(const o of enemies){
+                    const fdx = b.x-(o.x+o.size/2), fdy = b.y-(o.y+o.size/2);
+                    if(fdx*fdx+fdy*fdy < 12100){ o.slow = o.isBoss ? 60 : 150; o.flash = 2; }
+                  }
+                  createParticles(b.x, b.y, '#88ccff', 12, 4);
+                  addFloatingText('CONGELOU', b.x, b.y-20, '#88ccff');
+                }
                 if(isItemEquipped('splash')){
                   for(let other of enemies){
                     if(other===en) continue;
@@ -4107,24 +4380,37 @@
               }
             }
           }
-          if(b.hitEnemy){ player.vacuumCharge = Math.min(player.maxVacuumCharge, player.vacuumCharge+(hasRelicActive('bateria_antiga') ? 8 : 5)); updateUI(); }
+          if(b.hitEnemy){ addCharge(hasRelicActive('bateria_antiga') ? 8 : 5, false); updateUI(); }
           if(hit) bullets.splice(i,1);
         }
         updateRoomba();
+        updateVacuumSystem();
+        updateVortex();
+        updateBlessings();
 
         // Enemy bullets
         for(let i=enemyBullets.length-1;i>=0;i--){
           let eb=enemyBullets[i];
           eb.x+=eb.vx; eb.y+=eb.vy;
-          if(isItemEquipped('shield') && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<625){
-            if(bullets.length < MAX_BULLETS) bullets.push({x:eb.x, y:eb.y, vx:-eb.vx*1.6, vy:-eb.vy*1.6, hitEnemy:false});
-            createParticles(eb.x, eb.y, '#8fd3ff', 4, 3);
+          if(roombaActive && (eb.x-roombaActive.x)*(eb.x-roombaActive.x)+(eb.y-roombaActive.y)*(eb.y-roombaActive.y)<200){
+            roombaActive.hp -= 3; createParticles(eb.x, eb.y, '#8fd3ff', 3, 2);
             enemyBullets.splice(i,1);
             continue;
           }
+          if(isItemEquipped('shield') && shieldCooldown <= 0 && (eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<900){
+            shieldHP--; shakeTime = 4;
+            createParticles(eb.x, eb.y, '#8fd3ff', 5, 3);
+            enemyBullets.splice(i,1);
+            if(shieldHP <= 0){
+              shieldCooldown = 720;
+              createParticles(player.x+14, player.y+14, '#8fd3ff', 16, 5);
+              showNotification('ESCUDO QUEBROU. VOLTA EM 12S.');
+            }
+            continue;
+          }
           if((eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<225 && !player.invincible){
-            player.hp--; playHitSfx(); updateUI(); player.invincible=true; shakeTime=15;
-            if(player.hp<=0){ isGameOver=true; isPaused=true; }
+            hurtPlayer(1); playHitSfx(); updateUI(); player.invincible=true; shakeTime=15;
+            if(player.hp<=0) onPlayerDeath();
             setTimeout(()=>player.invincible=false,1000);
             enemyBullets.splice(i,1);
           } else if(eb.x<0 || eb.x>800 || eb.y<0 || eb.y>600){
@@ -4144,10 +4430,10 @@
               for(let j=0;j<2;j++) enemyBullets.push({x:en.x+en.size/2,y:en.y+en.size/2,vx:Math.cos(j*Math.PI)*4,vy:Math.sin(j*Math.PI)*4});
             }
             spawnItem(en.x+en.size/2, en.y+en.size/2, en.mimic);
-            totalKills++; updateKillCounter(); updateUI();
+            totalKills++; onEnemyKilled(en); updateKillCounter(); updateUI();
             if(en.isBoss){
               bossDefeated=true;
-              const bossRelic = {1:'bateria_antiga', 3:'mangueira_celeste'}[currentAct];
+              const bossRelic = {1:'bateria_antiga', 2:'camara_compressao', 3:'mangueira_celeste'}[currentAct];
               if(bossRelic && !hasFoundRelic(bossRelic)) addSacredRelic(bossRelic);
               clearedRooms.add(`${currentPos.x},${currentPos.y}`);
               if(currentAct === 5){
@@ -4179,7 +4465,7 @@
 
         if(enemies.length===0 && !getRoomData(`${currentPos.x},${currentPos.y}`).isShopRoom && !clearedRooms.has(`${currentPos.x},${currentPos.y}`)){
           clearedRooms.add(`${currentPos.x},${currentPos.y}`);
-          roomsExplored++;
+          roomsExplored++; if(isItemEquipped('hourglass')) hourglassReady = true;
           blackDustLevel = Math.max(0, blackDustLevel - 8);
           const bdRoom = getBlackDustRoom(`${currentPos.x},${currentPos.y}`);
           bdRoom.level = Math.max(0, bdRoom.level - 35);
@@ -4326,15 +4612,24 @@
           ctx.fillStyle="white"; ctx.fillRect(-player.size/2,-player.size/2+bob,player.size,player.size);
           ctx.fillStyle="rgba(255,255,255,.18)"; ctx.fillRect(-10,-10+bob,6,6);
           ctx.fillStyle="black"; ctx.fillRect(-8.5+ex,-5+bob+ey,5,5); ctx.fillRect(3.5+ex,-5+bob+ey,5,5);
-                    ctx.save(); ctx.rotate(ang-tilt); ctx.translate(0,bob+(player.isMoving?Math.random()*2:0));
+                    ctx.save(); ctx.rotate(ang-tilt); ctx.translate(player.vacuumCharge > 120 ? (Math.random()-0.5)*3 : 0, bob+(player.isMoving?Math.random()*2:0));
+          if(hasSacredVacuum && player.vacuumCharge > 5){
+            const gl = Math.min(1, player.vacuumCharge/150);
+            ctx.fillStyle = 'rgba(155,93,229,' + (0.15 + gl*0.45) + ')'; ctx.beginPath(); ctx.arc(30, 0, 8 + gl*14 + (player.vacuumCharge > 120 ? Math.random()*3 : 0), 0, Math.PI*2); ctx.fill();
+          }
           if(hasSacredVacuum){
             ctx.fillStyle="#56646c"; ctx.fillRect(15,-4,22,8); ctx.fillStyle='#283037'; ctx.fillRect(34,-6,6,12);
+            ctx.fillStyle='#8a4b2a'; ctx.fillRect(18,-3,3,2); ctx.fillRect(26,1,4,2); ctx.fillRect(31,-3,2,2);
+            ctx.fillStyle='#aeb6bc'; ctx.fillRect(16,-4,10,1); ctx.fillStyle='#1a1214'; ctx.fillRect(22,0,1,3);
+            if(hasRelicActive('camara_compressao')){ ctx.strokeStyle='#ffd86b'; ctx.lineWidth=2; ctx.strokeRect(21,-5,8,10); }
           } else {
             ctx.strokeStyle="#8c6b45"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(11,-10); ctx.lineTo(23,10); ctx.stroke();
           }
           if(hasSacredVacuum && player.isVacuuming){
             ctx.fillStyle=isSuperVacuumActive?"rgba(255,0,255,0.4)":"rgba(0,255,255,0.2)";
-            ctx.beginPath(); const vr=getVacuumRange(); ctx.moveTo(35,0); ctx.lineTo(vr,-vr*0.35); ctx.lineTo(vr,vr*0.35); ctx.fill();
+            const vr = getVacuumRange(); ctx.beginPath(); ctx.moveTo(35,0); ctx.lineTo(vr,-vr*0.4); ctx.lineTo(vr,vr*0.4); ctx.fill();
+            ctx.fillStyle = 'rgba(232,214,170,.75)';
+            for(let i = 0; i < 9; i++){ const k = 1 - ((gameTime*1.3 + i/9) % 1), d = 35 + (vr - 35)*k; ctx.fillRect(d, Math.sin(i*7.3)*d*0.3, 3, 2); }
           }
           if(isItemEquipped('blades')){
             ctx.fillStyle="rgba(0,255,255,0.2)"; ctx.beginPath(); ctx.arc(0,0,70,0,2*Math.PI); ctx.fill();
@@ -4347,7 +4642,7 @@
               ctx.fill();
             }
           }
-          if(isItemEquipped('shield')){
+          if(isItemEquipped('shield') && shieldCooldown <= 0){ ctx.globalAlpha = 0.35 + 0.65*(shieldHP/SHIELD_MAX);
             ctx.fillStyle="rgba(0,255,255,0.15)"; ctx.beginPath(); ctx.arc(0,0,30,0,2*Math.PI); ctx.fill();
             ctx.strokeStyle="#0FF"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,30,0,2*Math.PI); ctx.stroke();
           }
@@ -4383,26 +4678,21 @@
 
 
       function drawSacredVacuumAltar(){
-        if(currentAct !== 1 || currentPos.x!==0 || currentPos.y!==0 || hasSacredVacuum) return;
-        ctx.save();
-        ctx.translate(400,285);
-        ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0,44,76,18,0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#24170f'; ctx.fillRect(-72,18,144,34);
-        ctx.strokeStyle='#6b5036'; ctx.lineWidth=3; ctx.strokeRect(-72,18,144,34);
-        ctx.fillStyle='#3d2a1d'; ctx.beginPath(); ctx.moveTo(-52,18); ctx.lineTo(-30,-18); ctx.lineTo(30,-18); ctx.lineTo(52,18); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle='#d9b650'; ctx.lineWidth=2; ctx.stroke();
-        if(!hasSacredVacuum){
-          ctx.save();
-          ctx.globalAlpha = 0.8 + Math.sin(gameTime*4)*0.15;
-          ctx.fillStyle='#8fd3ff'; ctx.beginPath(); ctx.arc(0,-22,20,0,Math.PI*2); ctx.fill();
-          ctx.restore();
-          ctx.fillStyle='#30363a'; ctx.beginPath(); ctx.ellipse(0,-22,38,19,0,0,Math.PI*2); ctx.fill();
-          ctx.strokeStyle='#aeb6bc'; ctx.lineWidth=4; ctx.stroke();
-          ctx.fillStyle='#59646b'; ctx.fillRect(30,-31,76,16);
-          ctx.strokeStyle='#aeb6bc'; ctx.lineWidth=3; ctx.strokeRect(30,-31,76,16);
-          ctx.fillStyle='#e8d6aa'; ctx.font='22px VT323'; ctx.textAlign='center'; ctx.fillText('APERTE F PARA TOMAR O ASPIRADOR',0,82);
-        }
+        if(currentAct !== 1 || currentPos.x !== 0 || currentPos.y !== 0 || hasSacredVacuum) return;
+        const bob = Math.sin(gameTime*3)*8;
+        ctx.save(); ctx.translate(400, 285);
+        ctx.fillStyle = 'rgba(0,0,0,' + (0.35 - bob*0.008) + ')'; ctx.beginPath(); ctx.ellipse(0, 40, 34 - bob*0.5, 8 - bob*0.15, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(143,211,255,' + (0.12 + 0.05*Math.sin(gameTime*4)) + ')'; ctx.beginPath(); ctx.arc(0, -6 + bob, 46, 0, Math.PI*2); ctx.fill();
+        ctx.translate(0, -6 + bob);
+        const c = Math.cos(gameTime*1.6); ctx.scale(Math.sign(c || 1)*Math.max(0.15, Math.abs(c)), 1);
+        ctx.fillStyle = '#344149'; ctx.fillRect(-26, -12, 44, 28); ctx.strokeStyle = '#b6c3cb'; ctx.lineWidth = 3; ctx.strokeRect(-26, -12, 44, 28);
+        ctx.fillStyle = '#0c1012'; ctx.beginPath(); ctx.arc(-12, 2, 7, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#8fd3ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(-12, 2, 4, 0, Math.PI*2); ctx.stroke();
+        ctx.fillStyle = '#66737c'; ctx.fillRect(18, -3, 26, 10); ctx.fillStyle = '#1a2126'; ctx.fillRect(42, -6, 6, 16);
+        ctx.strokeStyle = '#66737c'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-18, -12); ctx.bezierCurveTo(-34, -24, -26, -40, -8, -36); ctx.stroke();
         ctx.restore();
+        ctx.fillStyle = '#f4d35e';
+        for(let i = 0; i < 3; i++){ const a = gameTime*1.5 + i*2.1; ctx.fillRect(400 + Math.cos(a)*40, 279 + bob + Math.sin(a)*14, 3, 3); }
       }
 
       function setWorldHover(label, x, y){
@@ -4447,16 +4737,13 @@
           ctx.fillStyle = '#16100c'; ctx.fillRect(item.x-32,item.y-22,64,48);
           ctx.strokeStyle = near ? '#f4e9c9' : '#d9b650'; ctx.lineWidth = near ? 3 : 2; ctx.strokeRect(item.x-32,item.y-22,64,48);
           if(!sold) drawItemGlow(item.x,item.y-2,'#d9b650',24);
-          ctx.fillStyle = sold ? '#4b3929' : '#d9b650'; ctx.beginPath(); ctx.arc(item.x,item.y-3,16,0,Math.PI*2); ctx.fill();
-          ctx.save(); ctx.translate(item.x,item.y-3); drawPowerupGlyph(ctx, item.powerUpId, 22, sold ? '#8f7a62' : '#1a110b'); ctx.restore();
+          ctx.fillStyle = '#241912'; ctx.beginPath(); ctx.arc(item.x,item.y-3,16,0,Math.PI*2); ctx.fill();
+          ctx.save(); ctx.translate(item.x,item.y-3); drawPowerupGlyph(ctx, item.powerUpId, 26, '#fff'); ctx.restore();
           ctx.fillStyle = sold ? '#8f7a62' : '#e8d6aa'; ctx.font='18px VT323';
           ctx.fillText(sold ? 'VENDIDO' : `${item.price} PO`, item.x, item.y+43);
           ctx.restore();
         }
-        if(nearAny){
-          ctx.save(); ctx.textAlign='center'; ctx.font='24px VT323'; ctx.fillStyle='#f4e9c9';
-          ctx.fillText('APERTE F PARA COMPRAR', 400, 455); ctx.restore();
-        }
+        fadePrompt('shop', 'APERTE F PARA COMPRAR', 400, 455, nearAny);
       }
 
       function drawActPortal(){
@@ -4470,15 +4757,12 @@
         for(let i=0;i<6;i++){ let a=i*Math.PI*2/6 + gameTime*0.8; ctx.fillStyle='rgba(232,245,255,.7)'; ctx.fillRect(Math.cos(a)*28-3, Math.sin(a)*28-3, 6, 6); }
         ctx.restore();
         if(Math.hypot(mouse.x-400, mouse.y-300) < 60) setWorldHover(`Portal para ${nextDef.name}`, 400, 266);
-        if(isNearActPortal()){
-          ctx.save(); ctx.textAlign='center'; ctx.font='24px VT323'; ctx.fillStyle='#e8f5ff';
-          ctx.fillText(`APERTE F PARA ENTRAR NO ATO ${currentAct+1}`, 400, 370);
-          ctx.restore();
-        }
+        fadePrompt('portal', 'APERTE F PARA ENTRAR NO ATO ' + (currentAct + 1), 400, 370, isNearActPortal());
       }
 
       function draw() {
         worldHoverLabel = '';
+        updateHudPanel();
         if(inHub){ drawHub(); return; }
         ctx.clearRect(0,0,800,600);
         ctx.save();
@@ -4489,6 +4773,7 @@
         drawRoomBase(roomData, roomKey);
         roomData.obstacles.forEach(drawObstacle);
         drawSacredVacuumAltar();
+        drawStains();
 
         if(lightPoints) lightPoints.forEach(l=>{
           let g=ctx.createRadialGradient(l.x,l.y,5,l.x,l.y,l.radius);
@@ -4515,7 +4800,7 @@
 
         doors.forEach(d=>drawDoor(d, enemies.length===0));
 
-        bossTraps.forEach(t=>{
+        bossTraps.forEach(t=>{ if(t.warn > 0){ ctx.strokeStyle = 'rgba(255,90,70,' + (0.4 + 0.4*Math.sin(gameTime*30)) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(t.x, t.y, t.radius, 0, Math.PI*2); ctx.stroke(); return; }
           ctx.fillStyle=`rgba(184,58,46,${0.25+Math.sin(gameTime*20)*0.18})`; ctx.beginPath(); ctx.arc(t.x,t.y,t.radius,0,2*Math.PI); ctx.fill();
           ctx.strokeStyle='#e3a35b'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(t.x,t.y,t.radius-5,0,2*Math.PI); ctx.stroke();
         });
@@ -4525,8 +4810,8 @@
           if(Math.hypot(mouse.x-pu.x, mouse.y-pu.y) < 18) setWorldHover(p?.name || 'Bênção', pu.x, pu.y-18);
           drawItemGlow(pu.x,pu.y,'#d9b650',28);
           ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(pu.x,pu.y,15,0,2*Math.PI); ctx.fill();
-          ctx.fillStyle='#d9b650'; ctx.beginPath(); ctx.arc(pu.x,pu.y,11,0,2*Math.PI); ctx.fill();
-          ctx.save(); ctx.translate(pu.x,pu.y); drawPowerupGlyph(ctx, pu.powerUpId, 20, '#1a110b'); ctx.restore();
+          ctx.fillStyle='#2a1c12'; ctx.beginPath(); ctx.arc(pu.x,pu.y,13,0,2*Math.PI); ctx.fill();
+          ctx.save(); ctx.translate(pu.x,pu.y); drawPowerupGlyph(ctx, pu.powerUpId, 24, '#fff'); ctx.restore();
         });
 
         items.forEach(it=>{
@@ -4534,9 +4819,9 @@
             ctx.fillStyle = 'rgba(217,182,80,.35)'; ctx.beginPath(); ctx.arc(it.x,it.y,7,0,2*Math.PI); ctx.fill();
             ctx.fillStyle = '#d9b650'; ctx.beginPath(); ctx.arc(it.x, it.y, 3, 0, 2*Math.PI); ctx.fill();
           } else if(!it.isMimic){
-            drawItemGlow(it.x,it.y,'#b83a2e',18);
+            drawItemGlow(it.x,it.y,it.type==='essence' ? '#7ddc6f' : '#b83a2e',18);
             ctx.fillStyle='#111'; ctx.fillRect(it.x-10,it.y-10,20,20);
-            ctx.fillStyle='#c64236'; ctx.fillRect(it.x-6,it.y-6,12,12);
+            ctx.fillStyle=it.type==='essence' ? '#4f9a4a' : '#c64236'; ctx.fillRect(it.x-6,it.y-6,12,12);
             ctx.fillStyle='#f0d0bd'; ctx.fillRect(it.x-2,it.y-7,4,14); ctx.fillRect(it.x-7,it.y-2,14,4);
           }
         });
@@ -4545,12 +4830,15 @@
         ctx.fillStyle="rgba(232,214,170,0.10)"; ambientDust.forEach(d=>{ ctx.fillRect(d.x,d.y,d.s,d.s); });
 
         enemies.forEach(en=>{ if(en.isBoss) drawBoss(en); else if(en.isGuardian) drawGuardian(en); else drawCommonEnemy(en); });
+        enemies.forEach(en => drawBossTelegraph(en));
         drawRoomba();
+        drawBlessingFx();
         drawPlayerArt();
 
         ctx.fillStyle="#f4d35e"; bullets.forEach(b=>{ ctx.fillRect(b.x-3,b.y-3,6,6); });
         ctx.fillStyle="#b83a2e"; enemyBullets.forEach(eb=>{ ctx.beginPath(); ctx.arc(eb.x,eb.y,5,0,2*Math.PI); ctx.fill(); });
 
+        drawDungeonPrompts();
         drawFloatingTexts();
         drawWorldHoverTooltip();
 
@@ -4559,15 +4847,11 @@
           ctx.fillStyle = '#d9b650'; ctx.fillRect(50,50,700,500); ctx.restore();
         }
 
+        drawShockwaves();
+        drawVortex();
         drawBlackDustOverlay(roomData, roomKey);
 
-        if(enemies.length>0 && enemies[0] && enemies[0].isBoss){
-          ctx.fillStyle="#170707"; ctx.fillRect(100,20,600,22);
-          let perc = enemies[0].hp/enemies[0].maxHp;
-          ctx.fillStyle="#b83a2e"; ctx.fillRect(100,20,perc*600,22);
-          ctx.strokeStyle='#e3a35b'; ctx.strokeRect(100,20,600,22);
-          ctx.textAlign='center'; ctx.font="18px Press Start 2P"; ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(20,8,8,.95)'; ctx.strokeText(`${bossTypesMap[enemies[0].baseType].name}`,400,16); ctx.fillStyle="#e8d6aa"; ctx.fillText(`${bossTypesMap[enemies[0].baseType].name}`,400,16);
-        }
+        updateBossHud();
 
         let grad = ctx.createRadialGradient(player.x+14,player.y+14,80,player.x+14,player.y+14,380);
         grad.addColorStop(0,"rgba(0,0,0,0)"); grad.addColorStop(0.58,"rgba(0,0,0,0.20)"); grad.addColorStop(1,"rgba(0,0,0,0.62)");
@@ -4586,13 +4870,13 @@
         if(isGameOver){
           ctx.fillStyle="rgba(8,5,3,0.92)"; ctx.fillRect(0,0,800,600);
           ctx.fillStyle=bossDefeated?"#d9b650":"#e8d6aa"; ctx.textAlign="center";
-          if(bossDefeated){
-            ctx.font="42px Press Start 2P"; ctx.fillText("FIM DA RUN",400,250);
+          if(false){
+            ctx.font='42px "Press Start 2P"'; ctx.fillText("FIM DA RUN",400,250);
             ctx.font="24px VT323"; ctx.fillText(`Você derrotou o ${bossTypesMap[bossType].name}!`,400,310);
             ctx.fillText(`Salas exploradas: ${visitedRooms.size}/${TOTAL_ROOMS}`,400,350);
             ctx.fillText(`Pó coletado: ${dustCount}`, 400, 380);
           } else {
-            ctx.font="42px Press Start 2P"; ctx.fillText("DERROTA",400,280);
+            ctx.font='42px "Press Start 2P"'; ctx.fillText("DERROTA",400,280);
             ctx.font="24px VT323"; ctx.fillText("A sujeira venceu a casa...",400,340);
           }
           ctx.font="22px VT323"; ctx.fillText("CLIQUE PARA RECOMEÇAR",400,430);
@@ -4600,7 +4884,480 @@
         ctx.restore();
       }
 
-      function updateBuildCounter() { document.getElementById('build-counter').innerHTML = `BENCAOS: ${equippedItems.length}/${MAX_EQUIPPED}`; }
+      function updateBossHud(){
+        const hud = document.getElementById('boss-hud');
+        if(!hud) return;
+        const boss = enemies.find(e => e.isBoss);
+        if(!boss){ hud.style.display = 'none'; return; }
+        const r = canvas.getBoundingClientRect();
+        hud.style.display = 'block';
+        hud.style.width = r.width + 'px';
+        hud.style.left = r.left + 'px';
+        hud.style.top = Math.max(4, r.top - 70) + 'px';
+        document.getElementById('boss-hud-name').textContent = bossTypesMap[boss.baseType].name + ' - FASE ' + (boss.phase || 1);
+        document.getElementById('boss-hud-fill').style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
+        document.getElementById('boss-hud-hp').textContent = Math.max(0, Math.floor(boss.hp)) + ' / ' + boss.maxHp;
+      }
+      function setupHudLayout(){
+        const make = (id, sels) => {
+          const w = document.createElement('div'); w.id = id; document.body.appendChild(w);
+          sels.forEach(s => { const el = document.querySelector(s); if(el) w.appendChild(el); });
+        };
+        make('hud-left', ['.ui', '.build-counter', '.room-counter', '.kill-counter']);
+        make('hud-right', ['#minimap-container', '#boss-warning', '.inventory-hint']);
+      }
+      let hudKey = '';
+      function setupHudPanel(){
+        const p = document.createElement('div'); p.id = 'hud-panel';
+        let seg = ''; for(let i = 0; i < 10; i++) seg += '<i></i>';
+        p.innerHTML = '<div class="hp-main"><div class="hp-box"><div class="hp-title" id="hp-title"></div>' +
+          '<div class="hp-row"><span>VIDA</span><span id="hp-num"></span></div><div class="hp-bar"><i id="hp-fill"></i></div>' +
+          '<div class="hp-row"><span>ASPIRADOR</span><span id="vac-num"></span></div><div class="hp-bar vac"><i id="vac-fill"></i></div></div>' +
+          '<div class="hp-gauge" id="hp-gauge" title="Poeira Negra">' + seg + '</div></div><div class="hp-list" id="hp-list"></div>';
+        const left = document.getElementById('hud-left');
+        if(left) left.insertBefore(p, left.firstChild); else document.body.appendChild(p);
+      }
+      function blessingStatus(id){
+        if(id === 'roomba') return roombaActive ? ['VIDA ' + Math.max(0, Math.ceil(roombaActive.hp)), false] : (roombaCooldown > 0 ? [Math.ceil(roombaCooldown/60) + 'S', false] : ['Q', true]);
+        if(id === 'escudo') return shieldCooldown > 0 ? [Math.ceil(shieldCooldown/60) + 'S', false] : [shieldHP + '/' + SHIELD_MAX, true];
+        if(id === 'aureola_quebrada') return haloCooldown > 0 ? [Math.ceil(haloCooldown/60) + 'S', false] : ['PRONTA', true];
+        if(id === 'mascara_porcelana') return maskReady ? ['PRONTA', true] : ['USADA', false];
+        if(id === 'congelamento') return freezeCooldown > 0 ? [Math.ceil(freezeCooldown/60) + 'S', false] : ['PRONTO', true];
+        return ['', false];
+      }
+      function updateHudPanel(){
+        if(!document.getElementById('hud-panel')) return;
+        const roomEl = document.getElementById('room-info');
+        const title = roomEl ? roomEl.textContent : '';
+        const vac = hasSacredVacuum ? Math.floor(player.vacuumCharge) : -1;
+        const dust = Math.ceil(blackDustLevel / 10);
+        const list = equippedItems.filter(id => availablePowerUps[id]).map(id => { const s = blessingStatus(id); return [availablePowerUps[id].name, s[0], s[1]]; });
+        const key = [title, player.hp, player.maxHp, vac, dust, JSON.stringify(list)].join('|');
+        if(key === hudKey) return;
+        hudKey = key;
+        document.getElementById('hp-title').textContent = title;
+        document.getElementById('hp-num').textContent = player.hp + '/' + player.maxHp;
+        document.getElementById('hp-fill').style.width = Math.max(0, player.hp / player.maxHp * 100) + '%';
+        document.getElementById('vac-num').textContent = vac < 0 ? 'PERDIDO' : vac + '/' + player.maxVacuumCharge;
+        document.getElementById('vac-fill').style.width = vac < 0 ? '0%' : Math.min(100, vac / player.maxVacuumCharge * 100) + '%';
+        document.getElementById('vac-fill').style.background = vac > 100 ? 'linear-gradient(90deg,#9b5de5,#c64236)' : '';
+        document.getElementById('vac-num').style.color = vac >= 20 ? '#d9b650' : '';
+        const color = getBlackDustState(blackDustLevel).color;
+        const segs = document.getElementById('hp-gauge').children;
+        for(let i = 0; i < segs.length; i++) segs[i].style.background = i < dust ? color : '';
+        document.getElementById('hp-list').innerHTML = list.map(l => '<div class="hp-item"><span><b>✛</b>' + l[0] + '</span><span class="st' + (l[2] ? ' ready' : '') + '">' + l[1] + '</span></div>').join('');
+      }
+      let waves = [];
+      function addCharge(n, over){
+        const cap = over ? 150 : player.maxVacuumCharge;
+        player.vacuumCharge = Math.max(player.vacuumCharge, Math.min(cap, player.vacuumCharge + n));
+      }
+      function hurtPlayer(n){
+        if(n > 0 && absorbMask()) return;
+        if(player.isVacuuming && hasSacredVacuum){
+          player.dmgCarry = (player.dmgCarry || 0) + n*0.5;
+          const whole = Math.floor(player.dmgCarry); player.dmgCarry -= whole; n = whole;
+        }
+        player.hp -= n; if(n > 0) onPlayerHurt();
+      }
+      function expelEnergy(force){
+        if(!hasSacredVacuum || isPaused || isGameOver || inHub) return;
+        const c = Math.min(150, player.vacuumCharge);
+        if(!force && c < 20){ showNotification('CARGA INSUFICIENTE.'); return; }
+        const cx = player.x + 14, cy = player.y + 14, radius = (90 + c*1.6)*(hasRelicActive('camara_compressao') ? 1.25 : 1), dmg = (12 + c*0.6)*(hasRelicActive('camara_compressao') ? 1.3 : 1);
+        for(const en of enemies){
+          const ex = en.x + en.size/2, ey = en.y + en.size/2, d = Math.hypot(ex - cx, ey - cy);
+          if(d > radius) continue;
+          const k = en.isBoss ? 0.35 : 1, ux = (ex - cx)/(d || 1), uy = (ey - cy)/(d || 1), push = 14*k*(0.6 + c/150);
+          en.hp -= dmg*k; en.flash = 3; en.vx += ux*push; en.vy += uy*push;
+          if(en.isGuardian) en.attackTimer = Math.max(en.attackTimer || 0, 45);
+          if(en.isBoss && en.state === 'tele' && en.kind !== 'charge'){ en.state = 'chase'; en.st = 45; }
+        }
+        for(let i = enemyBullets.length - 1; i >= 0; i--) if(Math.hypot(enemyBullets[i].x - cx, enemyBullets[i].y - cy) < radius) enemyBullets.splice(i, 1);
+        waves.push({x: cx, y: cy, r: 12, max: radius, life: 30, color: hasRelicActive('camara_compressao') ? '#ffd86b' : undefined});
+        createParticles(cx, cy, '#9b5de5', 18, 6); shakeTime = 12 + Math.floor(c/10);
+        if(hasRelicActive('filtro_guardiao') && c >= 60){ player.hp = Math.min(player.maxHp, player.hp + 1); createParticles(player.x + 14, player.y + 14, '#7ddc6f', 8, 3); }
+        player.vacuumCharge = 0; specialUsageCount++; playVacuumBurstSfx(); updateUI();
+        if(force) showNotification('SOBRECARGA! O ASPIRADOR EXPLODIU.');
+      }
+      function updateVacuumSystem(){
+        for(let i = waves.length - 1; i >= 0; i--){ const w = waves[i]; w.r += (w.max - w.r)*0.2 + 2; w.life--; if(w.life <= 0) waves.splice(i, 1); }
+        if(!hasSacredVacuum || !player.isVacuuming){ for(const e of enemies) e.suck = 0; return; }
+        getAimVector();
+        const ax = aimDirection.x, ay = aimDirection.y, ang = Math.atan2(ay, ax);
+        const pcx = player.x + 14, pcy = player.y + 14, nx = pcx + ax*38, ny = pcy + ay*38;
+        const range = getVacuumRange(), over = player.vacuumCharge > 100;
+        const power = (hasRelicActive('motor_sagrado') ? 1.3 : 1)*(over ? 1.25 : 1);
+        const inCone = (x, y) => {
+          const dx = x - pcx, dy = y - pcy;
+          if(Math.hypot(dx, dy) > range) return false;
+          let da = Math.atan2(dy, dx) - ang;
+          while(da > Math.PI) da -= 2*Math.PI; while(da < -Math.PI) da += 2*Math.PI;
+          return Math.abs(da) < 0.6;
+        };
+        for(const en of enemies){
+          if(en.isGuardian) continue;
+          const ex = en.x + en.size/2, ey = en.y + en.size/2;
+          if(!inCone(ex, ey)){ en.suck = 0; continue; }
+          const resist = en.isBoss ? (en.stun > 0 ? 0.45 : 0.15) : (en.size >= 40 ? 0.5 : 1);
+          const dx = nx - ex, dy = ny - ey, d = Math.hypot(dx, dy) || 1;
+          en.x += dx/d*1.3*power*resist; en.y += dy/d*1.3*power*resist;
+          en.suck = (en.suck || 0) + 1;
+          en.slow = Math.max(en.slow || 0, en.suck > 60 ? 20 : 6);
+          const cd = Math.hypot(ex - pcx, ey - pcy), minD = en.size/2 + 28;
+          if(!en.isBoss && cd < minD){ en.x = pcx + (ex - pcx)/(cd || 1)*minD - en.size/2; en.y = pcy + (ey - pcy)/(cd || 1)*minD - en.size/2; }
+          if(d < 70){
+            en.hp -= 0.25*power; addCharge(0.35, true);
+            if(!en.isBoss && en.size <= 30 && hasRelicActive('bocal_purificacao') && en.hp <= (en.maxHp || en.hp)*0.3){ en.hp = 0; addCharge(8, true); createParticles(ex, ey, '#9b5de5', 6, 3); }
+          } else addCharge(0.05, true);
+        }
+        for(let i = enemyBullets.length - 1; i >= 0; i--){
+          const b = enemyBullets[i];
+          if(b.explosive || !inCone(b.x, b.y)) continue;
+          const dx = nx - b.x, dy = ny - b.y, d = Math.hypot(dx, dy) || 1;
+          b.x += dx/d*3; b.y += dy/d*3;
+          if(d < 24){ enemyBullets.splice(i, 1); addCharge(3, true); createParticles(nx, ny, '#9b5de5', 3, 2); }
+        }
+        for(const list of [items, powerUpItems]) for(const it of list){
+          if(it.delay > 0) continue;
+          const dx = pcx - it.x, dy = pcy - it.y, d = Math.hypot(dx, dy);
+          if(d < range*0.8 && d > 8){ it.x += dx/d*2.2; it.y += dy/d*2.2; }
+        }
+        for(const s of getStains(currentPos.x + ',' + currentPos.y)){
+          if(!inCone(s.x, s.y)) continue;
+          s.hp -= 1.4*power;
+          if(frameCount % 3 === 0) createParticles(s.x, s.y, '#4a2a7a', 1, 2);
+          if(s.hp <= 0){
+            const list = getStains(currentPos.x + ',' + currentPos.y); list.splice(list.indexOf(s), 1);
+            spawnDust(s.x, s.y, 5); addCharge(6, true); blackDustLevel = Math.max(0, blackDustLevel - 2);
+            addFloatingText('PURIFICADO', s.x, s.y - 14, '#8fd3ff');
+            break;
+          }
+        }
+        if(over && frameCount % 4 === 0) createParticles(nx, ny, '#9b5de5', 1, 3);
+        if(player.vacuumCharge > 120) shakeTime = Math.max(shakeTime, 2);
+        if(player.vacuumCharge >= 150) expelEnergy(true);
+      }
+      function drawShockwaves(){
+        waves.forEach(w => {
+          ctx.save(); ctx.globalAlpha = Math.max(0, w.life/30)*0.8;
+          ctx.strokeStyle = w.color || '#9b5de5'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, Math.PI*2); ctx.stroke();
+          ctx.strokeStyle = '#e8d6aa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(w.x, w.y, w.r*0.92, 0, Math.PI*2); ctx.stroke();
+          ctx.restore();
+        });
+      }
+      const BOSS_KITS = {
+        acaro: ['charge', 'fan', 'charge'], tufo: ['slam', 'summon', 'slam'], esporo: ['rain', 'spiral', 'rain'],
+        polen: ['spiral', 'fan', 'spiral'], mofo: ['summon', 'slam', 'rain'], sentinela_ruinas: ['ring', 'slam', 'fan'],
+        bispo_filtro: ['rain', 'fan', 'summon'], mae_vermes: ['summon', 'charge', 'slam'],
+        lorde_acaro: ['charge', 'slam', 'spiral', 'summon', 'rain', 'ring']
+      };
+      const BOSS_MINION = {tufo: 'tufo', esporo: 'esporo', mofo: 'esporo', mae_vermes: 'larva_negra', bispo_filtro: 'acolito_poeira', lorde_acaro: 'elite_mite'};
+      function bossDmgMult(en){ if(!en.isBoss) return 1; if(en.state === 'roar') return 0; return en.stun > 0 ? 1.5 : 1; }
+      function spawnRainZones(en){
+        const n = 3 + en.phase;
+        for(let i = 0; i < n; i++){
+          const x = i === 0 ? player.x + 14 : 90 + Math.random()*620, y = i === 0 ? player.y + 14 : 90 + Math.random()*420;
+          bossTraps.push({x: x, y: y, life: en.tmax + 45, radius: 28, warn: en.tmax});
+        }
+      }
+      function updateBoss(en, cx, cy, dxp, dyp, speed){
+        if(!en.state){ en.state = 'chase'; en.st = 80; en.phase = 1; en.ai = 0; en.stun = 0; }
+        const ratio = en.hp/en.maxHp, ph = ratio > 0.66 ? 1 : (ratio > 0.33 ? 2 : 3);
+        if(ph > en.phase){
+          en.phase = ph; en.state = 'roar'; en.st = 50; enemyBullets.length = 0;
+          waves.push({x: cx, y: cy, r: 10, max: 150, life: 30}); shakeTime = 14;
+          showNotification(bossTypesMap[en.baseType].name + ': FASE ' + ph);
+        }
+        if(en.stun > 0) en.stun--;
+        en.st--;
+        const ang = Math.atan2(dyp, dxp);
+        if(en.state === 'chase'){
+          const sp = speed*(0.75 + 0.15*en.phase);
+          en.x += Math.cos(ang)*sp; en.y += Math.sin(ang)*sp;
+          if(en.st <= 0){
+            const kit = BOSS_KITS[en.baseType] || ['slam'];
+            en.kind = kit[en.ai++ % kit.length];
+            en.state = 'tele'; en.tmax = en.st = [0, 55, 42, 32][en.phase];
+            en.tx = player.x + 14; en.ty = player.y + 14;
+            if(en.kind === 'rain') spawnRainZones(en);
+          }
+        } else if(en.state === 'tele'){
+          if(en.kind !== 'charge'){ en.tx = player.x + 14; en.ty = player.y + 14; }
+          if(en.st % 10 < 4) en.flash = 2;
+          if(en.st <= 0) bossAttack(en, cx, cy);
+        } else if(en.state === 'dash'){
+          en.x += Math.cos(en.dir)*11; en.y += Math.sin(en.dir)*11;
+          if(en.st <= 0) bossRecover(en);
+        } else if(en.state === 'recover'){
+          if(en.st <= 0){ en.state = 'chase'; en.st = [0, 110, 80, 55][en.phase]; }
+        } else if(en.state === 'roar'){
+          if(en.st <= 0){ en.state = 'chase'; en.st = 40; }
+        }
+        clampEntityToRoom(en, en.size, false);
+      }
+      function bossRecover(en){
+        if(en.phase === 3 && en.ai % 2 === 1){ en.state = 'chase'; en.st = 12; return; }
+        en.state = 'recover'; en.st = [0, 70, 60, 50][en.phase]; en.stun = en.st;
+      }
+      function bossAttack(en, cx, cy){
+        const a = Math.atan2(en.ty - cy, en.tx - cx), ph = en.phase;
+        const shoot = (ang, sp) => { if(enemyBullets.length < MAX_ENEMY_BULLETS + 20) enemyBullets.push({x: cx, y: cy, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp}); };
+        if(en.kind === 'charge'){ en.dir = a; en.state = 'dash'; en.st = 20 + ph*2; return; }
+        if(en.kind === 'slam'){
+          const r = 90 + 20*ph;
+          if(Math.hypot(player.x + 14 - cx, player.y + 14 - cy) < r && !player.invincible){
+            hurtPlayer(1); player.invincible = true; setTimeout(() => player.invincible = false, 800); updateUI();
+            if(player.hp <= 0) onPlayerDeath();
+          }
+          waves.push({x: cx, y: cy, r: 10, max: r, life: 26}); shakeTime = 12;
+          const n = 6 + ph*2; for(let i = 0; i < n; i++) shoot(i*Math.PI*2/n, 3.6);
+        } else if(en.kind === 'fan'){
+          const n = 3 + ph*2; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.28, 4.6);
+        } else if(en.kind === 'spiral' || en.kind === 'ring'){
+          const n = 14, gap = Math.floor(Math.random()*n);
+          for(let i = 0; i < n; i++){ if(i === gap || i === (gap + 1) % n) continue; shoot(i*Math.PI*2/n + (en.kind === 'spiral' ? gameTime : 0), 3.8 + ph*0.4); }
+        } else if(en.kind === 'summon'){
+          const t = BOSS_MINION[en.baseType] || 'larva_negra';
+          for(let i = 0; i < 1 + ph && enemies.length < MAX_ENEMIES; i++){ const g = Math.random()*Math.PI*2; spawnEnemy(cx + Math.cos(g)*70, cy + Math.sin(g)*70, t, false); }
+        }
+        playEnemyShotSfx();
+        bossRecover(en);
+      }
+      function drawBossTelegraph(en){
+        if(!en.isBoss) return;
+        const cx = en.x + en.size/2, cy = en.y + en.size/2;
+        ctx.save();
+        if(en.stun > 0){
+          ctx.strokeStyle = 'rgba(217,182,80,' + (0.5 + 0.3*Math.sin(gameTime*12)) + ')'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
+          ctx.beginPath(); ctx.arc(cx, cy, en.size*0.62, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+        }
+        if(en.state === 'tele'){
+          const k = 1 - en.st/en.tmax, a = Math.atan2(en.ty - cy, en.tx - cx);
+          ctx.strokeStyle = 'rgba(255,90,70,' + (0.35 + 0.5*k) + ')'; ctx.fillStyle = 'rgba(255,90,70,' + (0.10 + 0.20*k) + ')'; ctx.lineWidth = 3;
+          if(en.kind === 'charge'){ ctx.lineWidth = 26; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a)*700, cy + Math.sin(a)*700); ctx.stroke(); }
+          else if(en.kind === 'slam'){ const r = 90 + 20*en.phase; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, r*k, 0, Math.PI*2); ctx.fill(); }
+          else if(en.kind === 'fan'){ const h = (3 + en.phase*2 - 1)/2*0.28; for(const s of [-h, h]){ ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a + s)*420, cy + Math.sin(a + s)*420); ctx.stroke(); } }
+          else if(en.kind === 'spiral' || en.kind === 'ring'){ ctx.beginPath(); ctx.arc(cx, cy, en.size*0.6 + 30*k, 0, Math.PI*2); ctx.stroke(); }
+          else if(en.kind === 'summon'){ for(let i = 0; i < 6; i++){ const g = i*Math.PI/3 + gameTime*2; ctx.fillRect(cx + Math.cos(g)*70 - 4, cy + Math.sin(g)*70 - 4, 8, 8); } }
+        }
+        ctx.restore();
+      }
+      let vortex = null, vortexCooldown = 0;
+      const stainsByRoom = {};
+      function getStains(key){
+        if(!stainsByRoom[key]){
+          const list = [], n = key === '0,0' ? 0 : (Math.random() < 0.6 ? 1 + Math.floor(Math.random()*2) : 0);
+          for(let i = 0; i < n; i++) list.push({x: 120 + Math.random()*560, y: 120 + Math.random()*360, r: 20 + Math.random()*10, hp: 100});
+          stainsByRoom[key] = list;
+        }
+        return stainsByRoom[key];
+      }
+      function drawStains(){
+        for(const s of getStains(currentPos.x + ',' + currentPos.y)){
+          const k = s.hp/100, sc = 0.6 + 0.4*k;
+          ctx.fillStyle = 'rgba(8,4,8,' + (0.55*k + 0.15) + ')'; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r*sc, s.r*0.7*sc, 0, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = 'rgba(120,40,70,' + (0.4*k) + ')'; ctx.lineWidth = 2;
+          for(let i = 0; i < 6; i++){ const a = i*Math.PI/3 + gameTime*0.2; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + Math.cos(a)*s.r*1.5, s.y + Math.sin(a)*s.r); ctx.stroke(); }
+        }
+      }
+      function castVortex(){
+        if(!hasSacredVacuum || isPaused || isGameOver || inHub || vortex) return;
+        if(vortexCooldown > 0){ showNotification('VÓRTICE RECARREGANDO: ' + Math.ceil(vortexCooldown/60) + 'S'); return; }
+        if(player.vacuumCharge < 40){ showNotification('O VÓRTICE PRECISA DE 40 DE CARGA.'); return; }
+        player.vacuumCharge -= 40; vortexCooldown = 780;
+        getAimVector();
+        vortex = {x: Math.max(100, Math.min(700, player.x + 14 + aimDirection.x*140)), y: Math.max(100, Math.min(500, player.y + 14 + aimDirection.y*140)), life: 150};
+        updateUI();
+      }
+      function updateVortex(){
+        if(vortexCooldown > 0) vortexCooldown--;
+        if(!vortex) return;
+        vortex.life--;
+        for(const en of enemies){
+          if(en.isGuardian) continue;
+          const dx = vortex.x - (en.x + en.size/2), dy = vortex.y - (en.y + en.size/2), d = Math.hypot(dx, dy);
+          if(d > 150 || d < 4) continue;
+          const f = en.isBoss ? 0.25 : (en.size >= 40 ? 0.9 : 1.8);
+          en.x += dx/d*f; en.y += dy/d*f; en.slow = Math.max(en.slow || 0, 10);
+          if(d < 60) en.hp -= 0.2;
+        }
+        for(let i = enemyBullets.length - 1; i >= 0; i--){
+          if(Math.hypot(vortex.x - enemyBullets[i].x, vortex.y - enemyBullets[i].y) < 90){ enemyBullets.splice(i, 1); addCharge(1.5, true); }
+        }
+        if(vortex.life <= 0) vortex = null;
+      }
+      function drawVortex(){
+        if(!vortex) return;
+        ctx.save(); ctx.translate(vortex.x, vortex.y); ctx.globalAlpha = Math.min(1, vortex.life/30);
+        for(let i = 0; i < 4; i++){ const a = gameTime*5 + i*Math.PI/2; ctx.strokeStyle = i % 2 ? '#9b5de5' : '#e8d6aa'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 30 + i*22, a, a + Math.PI*0.9); ctx.stroke(); }
+        ctx.fillStyle = 'rgba(20,8,30,.5)'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      const RARITY = {comum: {l: 'COMUM', c: '#b99662', w: 6}, raro: {l: 'RARO', c: '#8fd3ff', w: 3}, epico: {l: 'ÉPICO', c: '#c58cff', w: 1.5}, lendario: {l: 'LENDÁRIO', c: '#ffd86b', w: 0.6}};
+      let blessKills = 0, maskReady = false, hourglassReady = false, haloCooldown = 0, skullCd = 0, trapCd = 300, blessingPopup = null;
+      const gearWaves = [], floorTraps = [];
+      function weightedBlessing(ids){
+        const w = ids.map(id => (RARITY[availablePowerUps[id].rarity || 'comum'] || RARITY.comum).w);
+        let r = Math.random()*w.reduce((a, b) => a + b, 0);
+        for(let i = 0; i < ids.length; i++){ r -= w[i]; if(r <= 0) return ids[i]; }
+        return ids[0];
+      }
+      function playerDmgMult(){ return isItemEquipped('corecorrupt') ? 1.3 : 1; }
+      function nearestEnemyTo(x, y, maxD){
+        let best = null, bd = maxD*maxD;
+        for(const en of enemies){ const dx = en.x + en.size/2 - x, dy = en.y + en.size/2 - y, d = dx*dx + dy*dy; if(d < bd){ bd = d; best = en; } }
+        return best;
+      }
+      function skullPos(){ const a = gameTime*2.2; return {x: player.x + 14 + Math.cos(a)*34, y: player.y + 14 + Math.sin(a)*34}; }
+      function crystalBlast(x, y, src){
+        for(const o of enemies){
+          if(o === src) continue;
+          const dx = x - (o.x + o.size/2), dy = y - (o.y + o.size/2);
+          if(dx*dx + dy*dy < 3600){ o.hp -= 12*bossDmgMult(o); o.flash = 2; }
+        }
+        waves.push({x: x, y: y, r: 6, max: 60, life: 14, color: '#9b5de5'}); createParticles(x, y, '#9b5de5', 6, 3);
+      }
+      function onEnemyKilled(en){
+        const ex = en.x + en.size/2, ey = en.y + en.size/2;
+        if(isItemEquipped('gears')){
+          blessKills++;
+          if(blessKills >= 8){ blessKills = 0; [130, 300, 470].forEach((y, i) => gearWaves.push({x: 60 - i*70, y: y, vx: 5, rot: 0, hit: new Set()})); showNotification('ENGRENAGENS!'); }
+        }
+        if(isItemEquipped('spore') && Math.random() < 0.12) items.push({x: ex, y: ey, type: 'essence', size: 15});
+        if(isItemEquipped('abyss') && en.suck > 0) spawnDust(ex, ey, 4);
+      }
+      function onPlayerHurt(){
+        if(!isItemEquipped('bell')) return;
+        const cx = player.x + 14, cy = player.y + 14;
+        waves.push({x: cx, y: cy, r: 10, max: 130, life: 22, color: '#d9b650'});
+        for(const en of enemies){
+          const ex = en.x + en.size/2, ey = en.y + en.size/2, d = Math.hypot(ex - cx, ey - cy);
+          if(d > 130) continue;
+          const k = en.isBoss ? 0.2 : 1;
+          en.vx += (ex - cx)/(d || 1)*12*k; en.vy += (ey - cy)/(d || 1)*12*k; en.flash = 2;
+        }
+      }
+      function absorbMask(){
+        if(!isItemEquipped('mask') || !maskReady) return false;
+        maskReady = false;
+        waves.push({x: player.x + 14, y: player.y + 14, r: 8, max: 50, life: 16, color: '#e8d6aa'});
+        createParticles(player.x + 14, player.y + 14, '#e8d6aa', 10, 4);
+        showNotification('A MÁSCARA ABSORVEU O GOLPE.');
+        return true;
+      }
+      function haloBurst(){
+        haloCooldown = 3600;
+        const cx = player.x + 14, cy = player.y + 14, r = 200;
+        for(const en of enemies){
+          const ex = en.x + en.size/2, ey = en.y + en.size/2, d = Math.hypot(ex - cx, ey - cy);
+          if(d > r) continue;
+          const k = en.isBoss ? 0.35 : 1;
+          en.hp -= 60*k; en.flash = 3; en.vx += (ex - cx)/(d || 1)*12*k; en.vy += (ey - cy)/(d || 1)*12*k;
+        }
+        for(let i = enemyBullets.length - 1; i >= 0; i--) if(Math.hypot(enemyBullets[i].x - cx, enemyBullets[i].y - cy) < r) enemyBullets.splice(i, 1);
+        const st = getStains(currentPos.x + ',' + currentPos.y);
+        for(let i = st.length - 1; i >= 0; i--) if(Math.hypot(st[i].x - cx, st[i].y - cy) < r) st.splice(i, 1);
+        waves.push({x: cx, y: cy, r: 12, max: r, life: 34, color: '#ffd86b'});
+        player.invincible = true; setTimeout(() => player.invincible = false, 1200);
+        shakeTime = 14; showNotification('AURÉOLA QUEBRADA: PURIFICAÇÃO!');
+      }
+      function onRoomEnter(){
+        maskReady = true; gearWaves.length = 0; floorTraps.length = 0; trapCd = 120; skullCd = 60;
+        if(hourglassReady){
+          hourglassReady = false;
+          enemies.forEach(e => { if(!e.isBoss) e.slow = 300; });
+          addFloatingText('TEMPO PARTIDO', 400, 110, '#9b5de5');
+        }
+      }
+      function updateBlessings(){
+        if(haloCooldown > 0) haloCooldown--;
+        for(let i = gearWaves.length - 1; i >= 0; i--){
+          const g = gearWaves[i]; g.x += g.vx; g.rot += 0.3;
+          for(const en of enemies){
+            if(g.hit.has(en)) continue;
+            if(Math.hypot(g.x - (en.x + en.size/2), g.y - (en.y + en.size/2)) < 22 + en.size/2){ g.hit.add(en); en.hp -= en.isBoss ? 12 : 22; en.flash = 2; }
+          }
+          if(g.x > 780) gearWaves.splice(i, 1);
+        }
+        if(isItemEquipped('skull')){
+          skullCd--;
+          if(skullCd <= 0){
+            const p = skullPos(), t = nearestEnemyTo(p.x, p.y, 320);
+            if(t && bullets.length < MAX_BULLETS){
+              const a = Math.atan2(t.y + t.size/2 - p.y, t.x + t.size/2 - p.x);
+              bullets.push({x: p.x, y: p.y, vx: Math.cos(a)*10, vy: Math.sin(a)*10, hitEnemy: false}); skullCd = 70;
+            } else skullCd = 10;
+          }
+        }
+        if(isItemEquipped('trap') && enemies.length > 0){
+          trapCd--;
+          if(trapCd <= 0 && floorTraps.length < 2){ floorTraps.push({x: player.x + 14, y: player.y + 14, life: 900, held: null, hold: 0}); trapCd = 600; }
+        }
+        for(let i = floorTraps.length - 1; i >= 0; i--){
+          const t = floorTraps[i]; t.life--;
+          if(t.held){
+            t.hold--; t.held.x = t.hx; t.held.y = t.hy; t.held.hp -= 0.15;
+            if(t.hold <= 0 || t.held.hp <= 0) floorTraps.splice(i, 1);
+            continue;
+          }
+          for(const en of enemies){
+            if(en.isBoss || en.isGuardian) continue;
+            if(Math.hypot(t.x - (en.x + en.size/2), t.y - (en.y + en.size/2)) < 20 + en.size/2){ t.held = en; t.hold = 160; t.hx = en.x; t.hy = en.y; break; }
+          }
+          if(t.life <= 0) floorTraps.splice(i, 1);
+        }
+        if(isItemEquipped('halo') && haloCooldown <= 0 && player.hp > 0 && player.hp <= 2 && !isGameOver) haloBurst();
+      }
+      function drawBlessingFx(){
+        gearWaves.forEach(g => {
+          ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(g.rot); ctx.fillStyle = '#8d7356';
+          for(let i = 0; i < 8; i++){ ctx.rotate(Math.PI/4); ctx.fillRect(-4, -24, 8, 8); }
+          ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#b0572f'; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#120d09'; ctx.fillRect(-3, -3, 6, 6); ctx.restore();
+        });
+        floorTraps.forEach(t => {
+          ctx.fillStyle = '#4b2f1d'; ctx.fillRect(t.x - 14, t.y - 4, 28, 8);
+          ctx.fillStyle = '#aeb6bc'; for(let i = 0; i < 5; i++) ctx.fillRect(t.x - 12 + i*6, t.y - 8, 3, 5);
+        });
+        if(isItemEquipped('skull')){
+          const p = skullPos();
+          ctx.fillStyle = '#e8d6aa'; ctx.fillRect(p.x - 5, p.y - 5, 10, 9);
+          ctx.fillStyle = '#120d09'; ctx.fillRect(p.x - 3, p.y - 2, 2, 2); ctx.fillRect(p.x + 1, p.y - 2, 2, 2);
+        }
+        if(isItemEquipped('mask') && maskReady){
+          ctx.fillStyle = 'rgba(232,214,170,.85)'; ctx.fillRect(player.x + 8, player.y - 16, 12, 10);
+          ctx.fillStyle = '#120d09'; ctx.fillRect(player.x + 10, player.y - 13, 2, 2); ctx.fillRect(player.x + 16, player.y - 13, 2, 2);
+        }
+        if(isItemEquipped('eye')) enemies.forEach(en => {
+          if(en.isBoss) return;
+          ctx.fillStyle = '#170707'; ctx.fillRect(en.x, en.y - 9, en.size, 5);
+          ctx.fillStyle = '#c58cff'; ctx.fillRect(en.x, en.y - 9, en.size*Math.max(0, en.hp)/(en.maxHp || en.hp || 1), 5);
+        });
+      }
+      function startBlessingPopup(id){
+        const b = availablePowerUps[id];
+        if(!b) return;
+        blessingPopup = {id: id, t: 110};
+        createParticles(player.x + 14, player.y + 14, (RARITY[b.rarity || 'comum'] || RARITY.comum).c, 14, 4);
+      }
+      function drawBlessingPopup(){
+        if(!blessingPopup) return;
+        const p = blessingPopup, b = availablePowerUps[p.id];
+        if(!b || --p.t <= 0){ blessingPopup = null; return; }
+        const r = RARITY[b.rarity || 'comum'] || RARITY.comum;
+        const age = 110 - p.t, a = Math.min(1, p.t/20, age/10), s = 1 + (age < 14 ? (14 - age)*0.03 : 0);
+        ctx.save(); ctx.globalAlpha = a; ctx.translate(400, 150); ctx.scale(s, s);
+        ctx.fillStyle = 'rgba(12,8,5,.92)'; ctx.fillRect(-170, -42, 340, 84);
+        ctx.strokeStyle = r.c; ctx.lineWidth = 3; ctx.strokeRect(-170, -42, 340, 84);
+        ctx.save(); ctx.translate(-134, 0); drawPowerupGlyph(ctx, p.id, 56, '#fff'); ctx.restore();
+        ctx.textAlign = 'left'; ctx.font = '28px VT323'; ctx.fillStyle = '#f4e9c9'; ctx.fillText(b.name, -96, -8);
+        ctx.font = '20px VT323'; ctx.fillStyle = r.c; ctx.fillText(r.l, -96, 12);
+        ctx.fillStyle = '#b99662'; ctx.fillText(b.desc.length > 30 ? b.desc.slice(0, 30) + '…' : b.desc, -96, 32);
+        ctx.restore();
+      }
+      function updateBuildCounter() { document.getElementById('build-counter').innerHTML = `BÊNÇÃOS: ${equippedItems.length}/${MAX_EQUIPPED}`; }
 
 
       function serializeGame(){
@@ -4672,12 +5429,13 @@
           hasSacredVacuum = data.hasSacredVacuum !== undefined ? !!data.hasSacredVacuum : false;
           foundSacredRelics = data.foundSacredRelics || [];
           installedSacredRelics = data.installedSacredRelics || [];
-          // compatibilidade: saves antigos que guardavam reliquias pelo nome
+          // compatibilidade: saves antigos que guardavam relíquias pelo nome
           Object.keys(sacredRelicDefs).forEach(id=>{ if(storyRelics.includes(sacredRelicDefs[id].name) && !foundSacredRelics.includes(id)) foundSacredRelics.push(id); });
           inventory = data.inventory || [];
           equippedItems = (data.equippedItems || []).filter(id => id && availablePowerUps[id]);
           shootingMode = data.shootingMode ? (data.shootingMode === 'arrows' ? 'arrows' : 'mouse') : (localStorage.getItem(SHOOT_MODE_KEY) === 'arrows' ? 'arrows' : 'mouse');
           Object.assign(player, data.player || {});
+          player.invincible = false;
           enemies = data.enemies || [];
           bullets = data.bullets || [];
           enemyBullets = data.enemyBullets || [];
@@ -4685,13 +5443,14 @@
           powerUpItems = data.powerUpItems || [];
           bossTraps = data.bossTraps || [];
           shopItems = data.shopItems || [];
-          if(equippedItems.includes('roomba') && !roombaActive) spawnRoomba();
+          
           updateDoors(); updateUI(); updateBuildCounter(); updateKillCounter(); renderBlessingMenu(); updateShootModeUI(); applyShootModeCursor(); saveShootModeSetting();
           return true;
         } catch(e){ console.warn('Save corrompido:', e); return false; }
       }
 
       function resetSave(){ localStorage.removeItem(SAVE_KEY); }
+      function onPlayerDeath(){ isGameOver = true; isPaused = true; resetSave(); }
 
       function hasRelicActive(id){ return installedSacredRelics.includes(id); }
       function getVacuumRange(){ return hasRelicActive('mangueira_celeste') ? 260 : 200; }
@@ -4704,10 +5463,15 @@
         enterHub();
       }
 
-      function loop(){
+      let lastFrameTime = performance.now(), frameAcc = 0;
+      function loop(now){
         requestAnimationFrame(loop);
-        try { update(); draw(); }
-        catch(err){ console.error('Erro no loop:', err); }
+        now = now || performance.now();
+        frameAcc += Math.min(100, now - lastFrameTime); lastFrameTime = now;
+        try {
+          while(frameAcc >= 1000/60){ update(); frameAcc -= 1000/60; }
+          draw();
+        } catch(err){ console.error('Erro no loop:', err); frameAcc = 0; }
       }
       
       function startGame(){
@@ -4732,7 +5496,7 @@
         const ok = loadGame();
         if(!ok){ showNotification('NENHUM SAVE ENCONTRADO.'); return; }
         gameStarted = true;
-        if(isGameOver || player.hp <= 0){ player.hp = player.maxHp; enterHub(); }
+        if(isGameOver || player.hp <= 0){ resetSave(); gameStarted = false; isGameOver = false; player.hp = player.maxHp; showNotification('NENHUM SAVE ENCONTRADO.'); return; }
         const menu = document.getElementById('start-menu');
         if(menu) menu.style.display = 'none';
         isPaused = false;
@@ -4746,8 +5510,10 @@
       inHub = true;
       updateUI();
       updateShootModeUI();
-      // setupREInventoryEvents removido: novo sistema de bencaos;
+      // setupREInventoryEvents removido: novo sistema de bênçãos;
       if ('ontouchstart' in window) initMobileControls();
+      setupHudLayout();
+      setupHudPanel();
       loop();
       const continueBtn = document.getElementById('continue-btn'); if(continueBtn && !hasSave()) continueBtn.style.opacity = '.45';
       window.addEventListener('beforeunload', saveGame);
@@ -4759,28 +5525,31 @@
         ensureAudioContext();
         keys[e.code]=true;
         if(dialogueState.active && e.code==='KeyF'){
+          if(e.repeat){ e.preventDefault(); keys[e.code] = false; return; }
           e.preventDefault();
           keys[e.code] = false;
           advanceDialogue();
           return;
         }
         if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
-        if(e.code==='Escape') togglePause();
+        if(e.code==='Escape'){
+          const inv = document.getElementById('re-inventory'), sv = document.getElementById('sacred-vacuum-screen');
+          if(inv && inv.style.display==='flex') toggleREInventory();
+          else if(sv && sv.style.display==='flex') toggleSacredVacuumScreen();
+          else togglePause();
+        }
         if(e.code==='Tab'){ e.preventDefault(); toggleREInventory(); }
         if(e.code==='KeyR'){ e.preventDefault(); toggleSacredVacuumScreen(); }
-        if(e.code==='KeyQ') { e.preventDefault(); }
+        if(e.code==='KeyQ'){ e.preventDefault(); if(!e.repeat) summonRoomba(); }
+        if(e.code==='KeyC'){ e.preventDefault(); if(!e.repeat) castVortex(); }
         if(e.code==='KeyF' && !isGameOver && !isPaused && !inHub){
           e.preventDefault();
           buyNearestShopItem();
         }
         if((e.code==='KeyE' || e.code==='Space') && !isGameOver && !isPaused){
           e.preventDefault();
-          if(!hasSacredVacuum){ showNotification('VOCE AINDA NAO ENCONTROU O ASPIRADOR.'); return; }
-          if(e.code==='Space' && player.vacuumCharge>=player.maxVacuumCharge && !isSuperVacuumActive){
-            isSuperVacuumActive=true; player.vacuumCharge=0; specialUsageCount++; superVacuumTimer=180; shakeTime=20; playVacuumBurstSfx(); updateUI(); createParticles(player.x+14,player.y+14,"#F0F",15,4);
-          } else {
-            keys['Vacuum'] = true;
-          }
+          if(!hasSacredVacuum){ showNotification('VOCÊ AINDA NÃO ENCONTROU O ASPIRADOR.'); return; }
+          if(e.code==='Space') expelEnergy(); else keys['Vacuum'] = true;
         }
         if(e.code==='ShiftLeft' && isItemEquipped('dash') && Date.now()-lastDashTime>1000 && !isPaused && !isGameOver){
           e.preventDefault(); lastDashTime=Date.now(); let dd=100;
