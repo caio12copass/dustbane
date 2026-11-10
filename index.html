@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Dustbane v10</title>
+  <title>Dustbane v13</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -1030,6 +1030,11 @@
     body.pxl #boss-hud-bar{background:var(--b0);border-color:var(--b3);box-shadow:none}
     body.pxl #boss-hud-fill{background:var(--b3)}
     body.pxl #boss-hud-hp{color:var(--b2)}
+    
+    body.pxl-claro{--b0:#2c2438;--b1:#684830;--b2:#d8b888;--b3:#f8f0d0;--ui-bg:#f8f0d0;--ui-fg:#383038;--ui-mid:#786858;--ui-soft:#d8c8a0}
+    body.pxl-escuro{--b0:#10101a;--b1:#2c2438;--b2:#503c3c;--b3:#d8d0b8;--ui-bg:#1c1c2c;--ui-fg:#d8d0b8;--ui-mid:#8878a0;--ui-soft:#2c2c44}
+    body.pxl canvas:not(#gameCanvas){filter:none}
+    body.pxl-escuro canvas:not(#gameCanvas){filter:brightness(.85)}
     </style>
 </head>
 <body>
@@ -1040,7 +1045,7 @@
       <div class="board-strip"></div>
       <div class="menu-paper mission-paper">
         <div class="paper-tag">ORDEM DE SERVIÇO 01</div>
-        <h1>DUST<br>BANE</h1><div class="menu-small">versão 10</div>
+        <h1>DUST<br>BANE</h1><div class="menu-small">versão 13</div>
         <p class="paper-copy">A Poeira Negra voltou depois de eras. O último escolhido precisa atravessar a cidade antiga, recuperar as relíquias dos Guardiões e encontrar o Aspirador Sagrado antes do Lorde Acaro.</p>
         <div class="menu-actions">
           <button class="btn-ui" onclick="startGame()">NOVA JORNADA</button>
@@ -1280,12 +1285,13 @@
         gate: { x: 400, y: 120, r: 70, name: 'AREA CONTAMINADA', portrait:'gate' }
       };
       const hubObstacles = [
-        {x:74,y:120,w:20,h:20},{x:64,y:138,w:40,h:20},{x:54,y:156,w:64,h:22},{x:60,y:176,w:50,h:56},{x:110,y:194,w:52,h:38},
-        {x:48,y:338,w:86,h:22},{x:18,y:358,w:144,h:24},{x:30,y:378,w:112,h:54},{x:126,y:328,w:16,h:32},
-        {x:690,y:128,w:24,h:20},{x:672,y:146,w:60,h:26},{x:646,y:172,w:112,h:66},{x:732,y:132,w:14,h:34},
-        {x:664,y:350,w:94,h:28},{x:636,y:376,w:148,h:14},{x:648,y:386,w:124,h:46},
-        {x:356,y:296,w:88,h:40},
-        {x:338,y:164,w:16,h:48},{x:448,y:164,w:16,h:48}
+        {x:56,y:140,w:108,h:92},{x:30,y:372,w:120,h:60},{x:640,y:150,w:120,h:88},{x:636,y:380,w:144,h:52},{x:626,y:396,w:20,h:34},
+        {x:372,y:292,w:56,h:46},{x:338,y:164,w:16,h:48},{x:448,y:164,w:16,h:48},
+        {x:309,y:348,w:6,h:6},{x:485,y:348,w:6,h:6},{x:169,y:230,w:6,h:6},
+        {x:146,y:236,w:20,h:16},{x:164,y:390,w:40,h:46},{x:132,y:440,w:34,h:15},
+        {x:648,y:242,w:36,h:14},{x:724,y:246,w:16,h:10},{x:640,y:436,w:24,h:20},{x:700,y:438,w:16,h:18},{x:690,y:466,w:40,h:20},
+        {x:294,y:210,w:28,h:34},{x:496,y:224,w:28,h:14},{x:436,y:224,w:14,h:20},
+        {x:236,y:496,w:14,h:16},{x:556,y:496,w:14,h:16}
       ];
 
       // ---------- Configuração dos Bosses ----------
@@ -3065,7 +3071,11 @@
         return globalRoomData[key];
       }
       
-      function checkCollision(x,y,s,obs){ for(let o of obs) if(x < o.x+o.w && x+s > o.x && y < o.y+o.h && y+s > o.y) return true; return false; }
+      function checkCollision(x,y,s,obs){
+        for(let o of obs) if(x < o.x+o.w && x+s > o.x && y < o.y+o.h && y+s > o.y) return true;
+        if(!inHub) for(let o of bossObs) if(x < o.x+o.w && x+s > o.x && y < o.y+o.h && y+s > o.y) return true;
+        return false;
+      }
       function hasDoor(dir){ return doors.some(d => d.dir === dir); }
       function clampEntityToRoom(obj, size, allowDoorExit=false){
         let minX = 52, minY = 52, maxX = 748 - size, maxY = 548 - size;
@@ -3150,6 +3160,7 @@
       function generateRoom(direction) {
         const posKey = `${currentPos.x},${currentPos.y}`;
         enemies = []; bullets = []; enemyBullets = []; items = []; particles = []; powerUpItems = []; bossTraps = [];
+        bossObs.length = 0; beams.length = 0;
         const roomData = getRoomData(posKey);
         ambientObjects = roomData.ambientObjects ? [...roomData.ambientObjects] : [];
         lightPoints = roomData.lightPoints ? [...roomData.lightPoints] : [];
@@ -3713,6 +3724,8 @@
       }
 
       function updateHub(){
+        if(hubInterior){ updateInterior(); return; }
+        if(hubFade > 0) hubFade = Math.max(0, hubFade - 0.06);
         frameCount++;
         gameTime += 0.05;
         if(shakeTime>0) shakeTime--;
@@ -3737,6 +3750,7 @@
 
         updateHubNPCs();
         if(keys['KeyF'] && hubMessageCooldown<=0){
+          if(tryEnterHouse()){ hubMessageCooldown = 40; return; }
           if(distanceToPlayer(hubNPCs.gate.x, hubNPCs.gate.y) < hubNPCs.gate.r){
             hubMessageCooldown = 40;
             enterContaminatedArea();
@@ -3844,135 +3858,140 @@
         const g = ctx.createLinearGradient(0, 0, 0, 170); g.addColorStop(0, 'rgba(201,168,106,.26)'); g.addColorStop(1, 'rgba(201,168,106,0)');
         ctx.fillStyle = g; ctx.fillRect(0, 0, 800, 170);
       }
-      function drawTowerHouse(x, y){
-        houseShadow(x + 64, y + 90, 66);
-        stoneWall(x + 66, y + 52, 48, 38, '#5c4d40', '#3a2e26');
-        roofPoly([[x + 60, y + 54], [x + 90, y + 36], [x + 122, y + 54]], '#a8845a', '#7a5c3a');
-        stoneWall(x + 14, y + 28, 48, 62, '#6b5a49', '#43362b');
-        roofPoly([[x + 6, y + 32], [x + 38, y - 22], [x + 70, y + 32]], '#b99662', '#8d7356');
-        houseWindow(x + 33, y + 44, 8, 14, true);
-        houseDoor(x + 84, y + 68, 16, 22);
-        chimneySmoke(x + 98, y + 36);
+      function hbox(x, y, w, h, f, l){ ctx.fillStyle = f; ctx.fillRect(x, y, w, h); if(l){ ctx.strokeStyle = l; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h); } }
+      function hubLamp(x, y){
+        const f = 1 + Math.sin(gameTime*3 + x)*0.08;
+        ctx.fillStyle = 'rgba(217,182,80,.10)'; ctx.beginPath(); ctx.arc(x, y - 34, 36*f, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(217,182,80,.14)'; ctx.beginPath(); ctx.arc(x, y - 34, 20*f, 0, Math.PI*2); ctx.fill();
+        hbox(x - 2, y - 30, 4, 30, '#3d2a1d', '#1a120d'); hbox(x - 6, y - 42, 12, 12, '#d9b650', '#1a120d'); hbox(x - 3, y - 39, 6, 6, '#f4e9c9');
       }
-      function drawStoneCottage(x, y){
-        houseShadow(x + 70, y + 100, 74);
-        stoneWall(x + 8, y + 46, 112, 54, '#5a4a3c', '#3a2e26');
-        roofPoly([[x - 4, y + 50], [x + 26, y + 8], [x + 112, y + 8], [x + 140, y + 50]], '#b99662', '#8d7356');
-        ctx.fillStyle = '#8d7356'; ctx.fillRect(x + 26, y + 6, 86, 4);
-        stoneWall(x + 104, y - 4, 16, 36, '#6b5a49', '#43362b');
-        chimneySmoke(x + 112, y - 4);
-        houseDoor(x + 22, y + 70, 24, 30); houseWindow(x + 62, y + 66, 16, 14, true); houseWindow(x + 90, y + 66, 14, 14, false);
+      function hubCrate(x, y, w, h){
+        hbox(x, y, w, h, '#8d6b45', '#1a120d');
+        ctx.strokeStyle = '#5a4332'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y + h); ctx.moveTo(x + w, y); ctx.lineTo(x, y + h); ctx.stroke();
       }
-      function drawTimberHouse(x, y){
-        houseShadow(x + 54, y + 90, 62);
-        ctx.fillStyle = '#b9a784'; ctx.fillRect(x + 4, y + 50, 100, 38);
-        ctx.fillStyle = '#c8b894'; ctx.fillRect(x - 2, y + 22, 112, 30);
-        ctx.strokeStyle = '#3d2a1d'; ctx.lineWidth = 3;
-        ctx.strokeRect(x - 2, y + 22, 112, 30); ctx.strokeRect(x + 4, y + 50, 100, 38);
-        for(let i = 1; i < 4; i++){ ctx.beginPath(); ctx.moveTo(x - 2 + i*28, y + 22); ctx.lineTo(x - 2 + i*28, y + 52); ctx.stroke(); }
-        ctx.beginPath(); ctx.moveTo(x + 4, y + 88); ctx.lineTo(x + 54, y + 50); ctx.lineTo(x + 104, y + 88); ctx.stroke();
-        houseWindow(x + 10, y + 30, 14, 14, true); houseWindow(x + 80, y + 30, 14, 14, false); houseWindow(x + 60, y + 60, 12, 12, true);
-        houseDoor(x + 22, y + 62, 18, 26);
-        ctx.fillStyle = '#4b3f35'; ctx.fillRect(x + 4, y + 84, 100, 6);
-        roofPoly([[x - 10, y + 24], [x + 54, y - 22], [x + 118, y + 24]], '#6b4a30', '#4a3322');
-        stoneWall(x + 84, y - 18, 14, 34, '#6b5a49', '#43362b');
-        chimneySmoke(x + 91, y - 18);
+      function hubBarrel(x, y, w, h){ hbox(x, y, w, h, '#6b4a30', '#1a120d'); hbox(x, y + 4, w, 3, '#3d2a1d'); hbox(x, y + h - 7, w, 3, '#3d2a1d'); }
+      function hubBench(x, y){ hbox(x, y, 34, 4, '#8d6b45', '#1a120d'); hbox(x, y + 6, 34, 5, '#6b4a30', '#1a120d'); hbox(x + 3, y + 11, 4, 4, '#3d2a1d'); hbox(x + 27, y + 11, 4, 4, '#3d2a1d'); }
+      function hubFence(x, y, n){ hbox(x, y + 5, n*8, 3, '#8d6b45'); for(let i = 0; i < n; i++) hbox(x + i*8 + 1, y, 4, 12, '#b99662', '#1a120d'); }
+      function hubTree(x, y){
+        hbox(x - 4, y - 12, 8, 12, '#3d2a1d', '#1a120d');
+        ctx.fillStyle = '#3a4a34'; ctx.beginPath(); ctx.ellipse(x, y - 22, 16, 12, 0, 0, Math.PI*2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#1a120d'; ctx.stroke();
+        ctx.fillStyle = '#4f6a37'; ctx.fillRect(x - 8, y - 28, 6, 4); ctx.fillRect(x + 2, y - 24, 6, 4);
       }
-      function drawLongCottage(x, y){
-        houseShadow(x + 68, y + 94, 72);
-        stoneWall(x + 6, y + 48, 124, 46, '#4f5560', '#34393f');
-        roofPoly([[x - 6, y + 52], [x + 22, y + 12], [x + 116, y + 12], [x + 142, y + 52]], '#a8845a', '#7a5c3a');
-        ctx.fillStyle = '#6b4a30'; ctx.fillRect(x + 22, y + 10, 94, 4);
-        houseDoor(x + 90, y + 68, 22, 26); houseWindow(x + 24, y + 66, 14, 12, true); houseWindow(x + 52, y + 66, 14, 12, false);
-        ctx.fillStyle = 'rgba(217,182,80,.35)'; ctx.beginPath(); ctx.arc(x + 82, y + 70, 10, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#d9b650'; ctx.fillRect(x + 80, y + 66, 4, 6);
-        ctx.fillStyle = '#5a4332'; ctx.fillRect(x + 118, y + 74, 14, 20); ctx.strokeStyle = '#2a1c12'; ctx.strokeRect(x + 118, y + 74, 14, 20);
-        chimneySmoke(x + 36, y + 12);
+      function drawHubProps(){
+        for(let i = 0; i < 46; i++){
+          const gx = 20 + (i*173) % 760, gy = 108 + (i*97) % 440;
+          if(Math.abs(gx - 400) < 110 && gy > 120) continue;
+          if(checkCollision(gx - 4, gy - 4, 14, hubObstacles)) continue;
+          ctx.fillStyle = '#4f6a37'; ctx.fillRect(gx, gy, 2, 5); ctx.fillRect(gx + 3, gy + 1, 2, 4);
+        }
+        hubLamp(312, 354); hubLamp(488, 354); hubLamp(172, 236);
+        hubCrate(146, 236, 20, 16); hbox(149, 232, 5, 4, '#c64236', '#1a120d'); hbox(155, 232, 5, 4, '#d9b650', '#1a120d');
+        hbox(164, 396, 40, 38, '#4b3a2a', '#1a120d');
+        for(let r = 0; r < 3; r++) for(let c = 0; c < 4; c++){ hbox(169 + c*9, 402 + r*10, 4, 6, '#4f6a37'); if((r + c) % 2) hbox(170 + c*9, 400 + r*10, 2, 2, '#c64236'); }
+        hubFence(164, 390, 5); hubFence(164, 434, 5);
+        hubBench(132, 440);
+        hbox(648, 242, 36, 8, '#6b4a30', '#1a120d'); hbox(650, 250, 4, 6, '#3d2a1d'); hbox(678, 250, 4, 6, '#3d2a1d'); hbox(654, 238, 6, 4, '#aeb6bc'); hbox(668, 236, 3, 6, '#8d7356');
+        hbox(724, 246, 16, 5, '#2a3036', '#1a120d'); hbox(729, 251, 6, 5, '#2a3036');
+        hubCrate(640, 436, 24, 20); hubBarrel(700, 438, 16, 18);
+        hbox(690, 466, 40, 12, '#6b4a30', '#1a120d');
+        ctx.fillStyle = '#2a1c12'; ctx.strokeStyle = '#1a120d'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(698, 482, 5, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(722, 482, 5, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        hbox(294, 236, 24, 8, '#6b5a49', '#1a120d'); hbox(300, 216, 12, 20, '#8f98a0', '#1a120d'); hbox(302, 210, 8, 7, '#8f98a0', '#1a120d'); hbox(312, 222, 10, 4, '#56646c');
+        ctx.strokeStyle = '#1a120d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(305, 218); ctx.lineTo(309, 232); ctx.stroke();
+        hbox(500, 226, 22, 10, '#56646c', '#1a120d'); hbox(496, 230, 6, 6, '#0c1012'); hbox(508, 227, 4, 3, '#8a4b2a');
+        ctx.strokeStyle = '#8d7356'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(514, 226, 8, Math.PI, 0); ctx.stroke();
+        hbox(441, 232, 3, 12, '#3d2a1d', '#1a120d'); hbox(436, 224, 14, 9, '#8d6b45', '#1a120d');
+        ctx.fillStyle = '#1a120d'; ctx.beginPath(); ctx.moveTo(443, 226); ctx.lineTo(439, 231); ctx.lineTo(447, 231); ctx.closePath(); ctx.fill();
+        hubTree(243, 512); hubTree(563, 512);
+      }
+      function drawTowerHouse(){
+        houseShadow(110, 236, 76);
+        stoneWall(108, 196, 52, 36, '#5c4d40', '#3a2e26');
+        hbox(104, 188, 60, 10, '#3d3228', '#1a120d');
+        for(let i = 0; i < 5; i++) hbox(106 + i*12, 183, 8, 6, '#3d3228', '#1a120d');
+        houseWindow(114, 206, 10, 12, true); houseDoor(128, 212, 14, 20);
+        hbox(133, 202, 4, 8, '#d9b650'); hbox(131, 204, 8, 4, '#d9b650');
+        stoneWall(62, 168, 46, 64, '#6b5a49', '#43362b');
+        houseWindow(80, 184, 8, 14, true); houseWindow(80, 208, 8, 12, false);
+        ctx.fillStyle = '#b5793d'; ctx.beginPath(); ctx.arc(85, 168, 26, Math.PI, 0); ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = '#1a120d'; ctx.stroke();
+        hbox(82, 144, 6, 22, '#120d09');
+        ctx.lineCap = 'butt'; ctx.strokeStyle = '#1a120d'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(90, 150); ctx.lineTo(124, 126); ctx.stroke();
+        ctx.strokeStyle = '#8d7356'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(90, 150); ctx.lineTo(124, 126); ctx.stroke();
+      }
+      function drawStoneCottage(){
+        houseShadow(90, 436, 80);
+        stoneWall(30, 396, 112, 36, '#5a4a3c', '#3a2e26');
+        hbox(30, 382, 112, 16, '#c9b896', '#3a2e26');
+        roofPoly([[18,384],[46,346],[126,346],[154,384]], '#b99662', '#8d7356');
+        hbox(64, 352, 22, 18, '#b99662', '#1a120d'); houseWindow(70, 358, 10, 8, true);
+        stoneWall(126, 330, 14, 22, '#6b5a49', '#43362b'); chimneySmoke(133, 330);
+        houseDoor(100, 402, 24, 30); houseWindow(44, 402, 16, 14, true);
+        hbox(42, 418, 20, 5, '#6b4a30', '#1a120d');
+        ctx.fillStyle = '#c64236'; ctx.fillRect(45, 414, 3, 4); ctx.fillRect(58, 414, 3, 4); ctx.fillStyle = '#f4d35e'; ctx.fillRect(52, 414, 3, 4);
+        for(let i = 0; i < 3; i++) hbox(130, 414 + i*6, 14, 6, '#6b4a30', '#1a120d');
+      }
+      function drawTimberHouse(){
+        houseShadow(702, 240, 70);
+        hbox(650, 202, 104, 36, '#9d8b6a', '#3d2a1d');
+        hbox(646, 174, 112, 30, '#7a6548', '#3d2a1d');
+        ctx.strokeStyle = '#3d2a1d'; ctx.lineWidth = 2;
+        for(let x = 660; x < 750; x += 14){ ctx.beginPath(); ctx.moveTo(x, 176); ctx.lineTo(x, 236); ctx.stroke(); }
+        roofPoly([[638,176],[700,134],[764,150],[764,176]], '#4a3a2a', '#2a1f16');
+        stoneWall(736, 122, 12, 28, '#3a2e26', '#1a120d'); chimneySmoke(742, 122);
+        ctx.fillStyle = '#b0572f'; ctx.beginPath(); ctx.arc(676, 190, 11, 0, Math.PI*2); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#1a120d'; ctx.stroke();
+        for(let i = 0; i < 8; i++){ const a = i*Math.PI/4; hbox(Math.round(676 + Math.cos(a)*12) - 2, Math.round(190 + Math.sin(a)*12) - 2, 4, 4, '#6b2f1f'); }
+        hbox(674, 188, 4, 4, '#1a120d');
+        houseWindow(660, 212, 14, 12, true); houseWindow(730, 212, 14, 12, false);
+        hbox(686, 214, 32, 24, '#1a120d'); hbox(688, 216, 14, 22, '#6b4a30'); hbox(704, 216, 14, 22, '#6b4a30');
+        hbox(764, 168, 30, 5, '#3d2a1d', '#1a120d'); hbox(786, 168, 4, 26, '#3d2a1d');
+        ctx.strokeStyle = '#8d7356'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(778, 173); ctx.lineTo(778, 194); ctx.stroke(); hbox(775, 194, 6, 4, '#aeb6bc');
+      }
+      function drawLongCottage(){
+        houseShadow(710, 436, 78);
+        stoneWall(648, 392, 124, 40, '#4f5560', '#34393f');
+        roofPoly([[636,394],[660,356],[760,356],[786,394]], '#8c3d32', '#5a2a22');
+        for(let i = 0; i < 8; i++) hbox(650 + i*15, 396, 15, 12, i % 2 ? '#e8d6aa' : '#8c3d32', '#1a120d');
+        hbox(702, 410, 54, 12, '#120d09'); hbox(700, 422, 58, 8, '#6b4a30', '#1a120d');
+        hbox(708, 416, 6, 6, '#d9b650'); hbox(720, 417, 6, 5, '#b0572f'); hbox(732, 416, 6, 6, '#e8d6aa');
+        houseDoor(668, 408, 24, 24);
+        hbox(628, 398, 4, 30, '#3d2a1d', '#1a120d'); hbox(626, 396, 22, 14, '#6b4a30', '#1a120d'); hbox(634, 400, 6, 6, '#d9b650');
       }
       function drawHubGround(){
-        ctx.fillStyle = '#17100b'; ctx.fillRect(0,0,800,600);
-        const grad = ctx.createRadialGradient(400,300,60,400,300,540);
-        grad.addColorStop(0,'#4a3728'); grad.addColorStop(.55,'#24180f'); grad.addColorStop(1,'#0d0906');
-        ctx.fillStyle = grad; ctx.fillRect(0,0,800,600);
-
-        // chão orgânico
-        ctx.fillStyle='#5c4634';
-        ctx.beginPath();
-        ctx.moveTo(320,600); ctx.lineTo(480,600); ctx.quadraticCurveTo(470,500,500,420); ctx.quadraticCurveTo(530,340,495,290);
-        ctx.quadraticCurveTo(470,255,480,210); ctx.quadraticCurveTo(450,145,400,122); ctx.quadraticCurveTo(350,145,322,210);
-        ctx.quadraticCurveTo(332,255,305,290); ctx.quadraticCurveTo(270,340,300,420); ctx.quadraticCurveTo(330,500,320,600); ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle='rgba(255,230,180,.08)';
-        for(let i=0;i<28;i++){ const px=325+(i*17)%150, py=130+(i*31)%420; ctx.beginPath(); ctx.arc(px,py,2+(i%2),0,Math.PI*2); ctx.fill(); }
-
-        function drawHumanCastle(x,y,w,h,flip=false,lit=true){
-          ctx.save();
-          ctx.translate(x,y);
-          if(flip) ctx.scale(-1,1);
-          // massa principal mais orgânica
-          ctx.fillStyle='#40342a';
-          ctx.beginPath();
-          ctx.moveTo(0,h); ctx.lineTo(0,18); ctx.quadraticCurveTo(2,4,18,6);
-          ctx.lineTo(w*0.28,6); ctx.quadraticCurveTo(w*0.36,0,w*0.45,8); ctx.lineTo(w*0.72,12);
-          ctx.quadraticCurveTo(w*0.9,16,w,h*0.44); ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
-          ctx.fillStyle='#5c4d40';
-          ctx.beginPath();
-          ctx.moveTo(8,h-4); ctx.lineTo(8,24); ctx.quadraticCurveTo(10,14,22,16);
-          ctx.lineTo(w*0.26,14); ctx.quadraticCurveTo(w*0.34,10,w*0.41,16); ctx.lineTo(w*0.68,18);
-          ctx.quadraticCurveTo(w*0.82,20,w-10,h*0.44); ctx.lineTo(w-10,h-4); ctx.closePath(); ctx.fill();
-          // ameias irregulares
-          ctx.fillStyle='#6b5a49';
-          const teeth=[0,18,38,58,82];
-          teeth.forEach((tx,i)=>{ ctx.fillRect(tx + (i%2?2:0), 0, 12 + (i%2?4:0), 8); });
-          // janelas e porta
-          ctx.fillStyle= lit ? 'rgba(217,182,80,.34)' : 'rgba(30,30,30,.22)';
-          ctx.beginPath(); ctx.arc(36,44,5,0,Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.ellipse(w*0.65,52,6,8,0,0,Math.PI*2); ctx.fill();
-          ctx.fillStyle='#100b08';
-          ctx.beginPath(); ctx.moveTo(48,h-2); ctx.lineTo(48,h-26); ctx.quadraticCurveTo(58,h-40,72,h-26); ctx.lineTo(72,h-2); ctx.closePath(); ctx.fill();
-          // contorno tortinho
-          ctx.strokeStyle='#1a120d'; ctx.lineWidth=3; ctx.stroke();
-          // detalhe humano tipo tecido/bandeira
-          ctx.strokeStyle='#8d7356'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(22,4); ctx.lineTo(22,-18); ctx.stroke();
-          ctx.fillStyle= lit ? '#8c3d32' : '#5a4b3f'; ctx.beginPath(); ctx.moveTo(22,-18); ctx.lineTo(40,-14); ctx.lineTo(22,-9); ctx.closePath(); ctx.fill();
-          ctx.restore();
-        }
-        drawHubBack();
-        drawTowerHouse(46,142);
-        drawStoneCottage(22,332);
-        drawTimberHouse(648,150);
-        drawLongCottage(642,338);
-
-        // praça central arredondada / poço
-        ctx.fillStyle='#2d2118';
-        ctx.beginPath(); ctx.arc(400,315,108,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#4e3b2c';
-        ctx.beginPath(); ctx.arc(400,315,92,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#66503c';
-        for(let i=0;i<18;i++){ const a=(Math.PI*2/18)*i; ctx.fillRect(400+Math.cos(a)*82-4,315+Math.sin(a)*82-4,8,8); }
-        ctx.fillStyle='#3b2b20'; ctx.beginPath(); ctx.ellipse(400,315,48,22,0,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle='#102026'; ctx.beginPath(); ctx.ellipse(400,318,30,11,0,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle='#8f7452'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(372,286); ctx.lineTo(428,286); ctx.moveTo(376,286); ctx.lineTo(376,336); ctx.moveTo(424,286); ctx.lineTo(424,336); ctx.stroke();
-
-        // curva superior para as ruínas
-        ctx.strokeStyle='#6b5036'; ctx.lineWidth=18;
-        ctx.beginPath(); ctx.moveTo(330,190); ctx.quadraticCurveTo(400,145,470,190); ctx.stroke();
-        ctx.fillStyle='#261911'; ctx.fillRect(343,170,114,24);
-        ctx.fillStyle='#6b5036'; ctx.fillRect(338,164,12,48); ctx.fillRect(450,164,12,48);
-        ctx.fillStyle='#7a6550'; ctx.fillRect(343,164,114,10);
-
-        // morrinho inferior
-        ctx.fillStyle='#49382a';
-        ctx.beginPath(); ctx.moveTo(140,600); ctx.quadraticCurveTo(182,520,224,462); ctx.quadraticCurveTo(265,456,282,520); ctx.quadraticCurveTo(360,540,458,520); ctx.quadraticCurveTo(522,548,612,548); ctx.quadraticCurveTo(662,566,718,584); ctx.lineTo(718,600); ctx.closePath(); ctx.fill();
-        ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(0,540,800,60);
-
-        // portal/entrada contaminada
-        ctx.save(); ctx.translate(hubNPCs.gate.x, hubNPCs.gate.y);
-        ctx.fillStyle='rgba(8,5,4,.92)'; ctx.beginPath(); ctx.ellipse(0,0,58,38,0,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle='#7f2e24'; ctx.lineWidth=5; ctx.beginPath(); ctx.ellipse(0,0,61,41,0,0,Math.PI*2); ctx.stroke();
-        ctx.strokeStyle='rgba(184,58,46,.45)'; ctx.lineWidth=2;
-        for(let i=0;i<7;i++){ let a=gameTime+i; ctx.beginPath(); ctx.arc(0,0,20+i*5,a,a+Math.PI*0.9); ctx.stroke(); }
-        ctx.restore();
+        fb(0, 0, 800, 600, '#6f9a58');
+        for(let y = 0; y < 600; y += 32) for(let x = 0; x < 800; x += 32) if(((x + y) >> 5) % 2) fb(x, y, 32, 32, '#6a9452');
+        for(let i = 0; i < 90; i++){ const gx = (i*131) % 790, gy = (i*89) % 590; fb(gx, gy, 2, 4, '#88b06a'); fb(gx + 4, gy + 1, 2, 3, '#88b06a'); }
+        const P = (x, y, w, h) => { fb(x, y, w, h, '#d9c694'); fb(x, y, w, 3, '#e6d6a8'); };
+        P(360, 106, 80, 494); P(124, 232, 24, 40); P(124, 256, 190, 24); P(100, 432, 24, 30); P(100, 450, 270, 24);
+        P(690, 238, 24, 32); P(486, 256, 228, 24); P(668, 432, 24, 30); P(430, 450, 262, 24);
+        fcirc(400, 315, 98, '#cdb98a'); fcirc(400, 315, 84, '#d9c694');
+        for(let i = 0; i < 16; i++){ const a = i*Math.PI/8; fb(Math.round(400 + Math.cos(a)*90) - 3, Math.round(315 + Math.sin(a)*90) - 3, 6, 6, '#b8a478'); }
+        fcirc(400, 318, 26, '#9898a8'); fcirc(400, 318, 19, '#4888c8'); fcirc(400, 314, 12, '#68a8e0');
+        fb(372, 296, 4, 22, '#785028'); fb(424, 296, 4, 22, '#785028'); fb(370, 292, 60, 6, '#a05838');
+        ctx.fillStyle = '#2c2438'; ctx.beginPath(); ctx.ellipse(400, 120, 58, 38, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#8a3a50'; ctx.beginPath(); ctx.ellipse(400, 120, 50, 31, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#2c2438'; ctx.beginPath(); ctx.ellipse(400, 120, 42, 25, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#b05878'; ctx.lineWidth = 2;
+        for(let i = 0; i < 5; i++){ const a = gameTime + i; ctx.beginPath(); ctx.arc(400, 120, 12 + i*6, a, a + Math.PI*0.9); ctx.stroke(); }
+        fb(338, 164, 16, 48, '#a0a0aa'); fb(338, 164, 16, 5, '#c0c0c8'); fb(448, 164, 16, 48, '#a0a0aa'); fb(448, 164, 16, 5, '#c0c0c8'); fb(338, 160, 126, 8, '#8a8a96');
+        fHouse(56, 140, 108, 92, 44, {roof: '#5878a8', roofHi: '#7898c8', roofLo: '#405888', wall: '#e0dcc8', base: '#c0bca8'});
+        fcirc(110, 162, 14, '#98b8d8'); fcirc(110, 162, 8, '#2c3858'); fb(108, 156, 4, 12, '#f0d060'); fb(104, 160, 12, 4, '#f0d060');
+        fWin(70, 198); fWin(88, 198); fDoor(128, 212, 14, 20);
+        fHouse(30, 372, 120, 60, 28, {roof: '#c05040', roofHi: '#e07860', roofLo: '#983828', wall: '#f0e4c4', base: '#d0c4a0'});
+        fb(120, 376, 12, 14, '#a09088'); fb(120, 376, 12, 3, '#c0b0a8');
+        for(let i = 0; i < 3; i++){ const k = (gameTime*0.8 + i*0.33) % 1; ctx.fillStyle = 'rgba(240,240,240,' + (0.5*(1 - k)) + ')'; ctx.beginPath(); ctx.arc(126 + Math.sin(k*5)*5, 372 - k*30, 4 + k*5, 0, Math.PI*2); ctx.fill(); }
+        fWin(44, 408); fWin(66, 408); fDoor(100, 408, 24, 24);
+        fb(42, 419, 38, 4, '#785028'); fb(44, 416, 4, 3, '#e07860'); fb(52, 416, 4, 3, '#f0d060'); fb(60, 416, 4, 3, '#e07860'); fb(68, 416, 4, 3, '#f0d060');
+        fHouse(640, 150, 120, 88, 40, {roof: '#b87840', roofHi: '#d89860', roofLo: '#905828', wall: '#d8b888', base: '#b89868'});
+        fb(736, 156, 12, 14, '#a09088');
+        fcirc(668, 208, 11, '#905828'); fcirc(668, 208, 5, '#d8b888');
+        for(let i = 0; i < 8; i++){ const a = i*Math.PI/4; fb(Math.round(668 + Math.cos(a)*12) - 2, Math.round(208 + Math.sin(a)*12) - 2, 4, 4, '#905828'); }
+        fWin(728, 198); fDoor(686, 214, 32, 24); fb(701, 214, 2, 24, '#6a4020');
+        fHouse(636, 380, 144, 52, 24, {roof: '#58a068', roofHi: '#78c088', roofLo: '#388048', wall: '#a8b8c8', base: '#8898a8'});
+        for(let i = 0; i < 12; i += 2) fb(636 + i*12, 384, 12, 20, '#e8f0e0');
+        fb(700, 410, 56, 14, '#2a3040'); fb(704, 414, 6, 6, '#f0d060'); fb(718, 415, 6, 5, '#c05040'); fb(732, 414, 6, 6, '#f8f0d0'); fb(698, 424, 60, 6, '#785028');
+        fDoor(668, 408, 24, 24);
+        fb(628, 398, 4, 30, '#785028'); fb(626, 396, 22, 14, '#a87040'); fb(634, 400, 6, 6, '#f0d060');
       }
 
       function drawSage(x,y){
@@ -4025,18 +4044,22 @@
         drawDamageNumbers();
       }
       function drawHub(){
+        if(hubInterior){ drawInterior(); return; }
         ctx.clearRect(0,0,800,600);
         ctx.save();
         if(shakeTime>0) ctx.translate((Math.random()-0.5)*shakeTime, (Math.random()-0.5)*shakeTime);
         drawHubGround();
+        drawHubProps();
         drawSage(hubNPCs.sage.x, hubNPCs.sage.y + npcBob(hubNPCs.sage));
         drawHubMerchant(hubNPCs.merchant.x, hubNPCs.merchant.y + npcBob(hubNPCs.merchant));
         drawHubVillager(hubNPCs.villager1.x, hubNPCs.villager1.y + npcBob(hubNPCs.villager1), 'MORADORA', 1);
         drawHubVillager(hubNPCs.villager2.x, hubNPCs.villager2.y + npcBob(hubNPCs.villager2), 'ARTESAO', 2);
         drawPlayerArt();
         drawHubPrompt();
+        drawDoorPrompts();
         drawFloatingTexts();
         drawWorldHoverTooltip();
+        if(hubFade > 0){ ctx.fillStyle = 'rgba(0,0,0,' + hubFade + ')'; ctx.fillRect(0, 0, 800, 600); }
         ctx.restore();
         updateDialogueBox();
       }
@@ -4496,6 +4519,7 @@
         updateVacuumSystem();
         updateVortex();
         updateBlessings();
+        updateBossSystem();
 
         // Enemy bullets
         for(let i=enemyBullets.length-1;i>=0;i--){
@@ -4517,7 +4541,7 @@
             }
             continue;
           }
-          if((eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<225 && !player.invincible){
+          if((eb.x-(player.x+14))*(eb.x-(player.x+14))+(eb.y-(player.y+14))*(eb.y-(player.y+14))<(eb.big ? 484 : 225) && !player.invincible){
             hurtPlayer(1); playHitSfx(); updateUI(); player.invincible=true; shakeTime=15;
             if(player.hp<=0) onPlayerDeath();
             setTimeout(()=>player.invincible=false,1000);
@@ -4883,6 +4907,7 @@
 
         drawRoomBase(roomData, roomKey);
         roomData.obstacles.forEach(drawObstacle);
+        bossObs.forEach(drawBossPillar);
         drawSacredVacuumAltar();
         drawStains();
 
@@ -4945,14 +4970,16 @@
         }); ctx.globalAlpha = 1;
         ctx.fillStyle="rgba(232,214,170,0.10)"; ambientDust.forEach(d=>{ ctx.fillRect(d.x,d.y,d.s,d.s); });
 
-        enemies.forEach(en=>{ if(en.isBoss) drawBoss(en); else if(en.isGuardian) drawGuardian(en); else drawCommonEnemy(en); });
+        enemies.forEach(en=>{ drawEnemyAid(en); if(en.isBoss) drawBoss(en); else if(en.isGuardian) drawGuardian(en); else drawCommonEnemy(en); });
         enemies.forEach(en => drawBossTelegraph(en));
+        drawBeams();
         drawRoomba();
         drawBlessingFx();
+        drawEnemyAid({x: player.x, y: player.y, size: player.size});
         drawPlayerArt();
 
         ctx.fillStyle="#f4d35e"; bullets.forEach(b=>{ ctx.fillRect(b.x-3,b.y-3,6,6); });
-        ctx.fillStyle="#b83a2e"; enemyBullets.forEach(eb=>{ ctx.beginPath(); ctx.arc(eb.x,eb.y,5,0,2*Math.PI); ctx.fill(); });
+        ctx.fillStyle="#b83a2e"; enemyBullets.forEach(eb=>{ ctx.beginPath(); ctx.arc(eb.x,eb.y,eb.big ? 11 : (eb.fuse !== undefined ? 7 : 5),0,2*Math.PI); ctx.fill(); if(eb.fuse !== undefined){ ctx.strokeStyle = "#f4e9c9"; ctx.lineWidth = 2; ctx.stroke(); } });
 
         drawDungeonPrompts();
         drawFloatingTexts();
@@ -5155,65 +5182,122 @@
           ctx.restore();
         });
       }
-      const BOSS_KITS = {
-        acaro: ['charge', 'fan', 'charge'], tufo: ['slam', 'summon', 'slam'], esporo: ['rain', 'spiral', 'rain'],
-        polen: ['spiral', 'fan', 'spiral'], mofo: ['summon', 'slam', 'rain'], sentinela_ruinas: ['ring', 'slam', 'fan'],
-        bispo_filtro: ['rain', 'fan', 'summon'], mae_vermes: ['summon', 'charge', 'slam'],
-        lorde_acaro: ['charge', 'slam', 'spiral', 'summon', 'rain', 'ring']
+      const BOSS_SCRIPTS = {
+        acaro: {1: [['charge'], ['fang', 'charge']], 2: [['charge', 'charge'], ['fang', 'fang', 'charge']], 3: [['charge', 'charge', 'charge'], ['fang', 'charge', 'fang', 'charge']]},
+        tufo: {1: [['dust', 'dust'], ['slam']], 2: [['dust', 'slam'], ['summon', 'dust']], 3: [['dust', 'dust', 'slam'], ['summon', 'slam', 'dust']]},
+        esporo: {1: [['spore'], ['spore', 'rain']], 2: [['spore', 'spore'], ['rain', 'spore']], 3: [['spore', 'spore', 'rain'], ['rain', 'spore', 'spore']]},
+        polen: {1: [['wall'], ['spiral']], 2: [['wall', 'wall'], ['spiral', 'wall']], 3: [['wall', 'spiral', 'wall'], ['spiral', 'spiral', 'wall']]},
+        mofo: {1: [['mold'], ['summon']], 2: [['mold', 'summon'], ['mold', 'mold']], 3: [['mold', 'summon', 'slam'], ['mold', 'mold', 'summon']]},
+        sentinela_ruinas: {1: [['beam'], ['ring']], 2: [['beam', 'ring'], ['beam', 'beam']], 3: [['beam', 'ring', 'beam'], ['ring', 'beam', 'beam']]},
+        bispo_filtro: {1: [['totem', 'fan'], ['rain']], 2: [['totem', 'rain', 'fan']], 3: [['rain', 'fan', 'totem', 'fan']]},
+        mae_vermes: {1: [['egg', 'charge'], ['egg']], 2: [['egg', 'egg', 'slam'], ['charge', 'egg']], 3: [['egg', 'charge', 'egg', 'slam']]},
+        lorde_acaro: {1: [['charge', 'fang'], ['ring', 'rain']], 2: [['spiral', 'charge', 'summon'], ['rain', 'ring', 'charge']], 3: [['charge', 'spiral', 'rain', 'charge'], ['ring', 'summon', 'charge', 'charge']]}
       };
       const BOSS_MINION = {tufo: 'tufo', esporo: 'esporo', mofo: 'esporo', mae_vermes: 'larva_negra', bispo_filtro: 'acolito_poeira', lorde_acaro: 'elite_mite'};
+      const BOSS_TELE = {charge: 50, fang: 40, fan: 40, slam: 55, dust: 45, summon: 50, spore: 45, rain: 55, wall: 55, spiral: 40, ring: 45, mold: 55, beam: 60, totem: 60, egg: 55};
+      const bossObs = [], beams = [];
       function bossDmgMult(en){ if(!en.isBoss) return 1; if(en.state === 'roar') return 0; return en.stun > 0 ? 1.5 : 1; }
-      function spawnRainZones(en){
-        const n = 3 + en.phase;
-        for(let i = 0; i < n; i++){
-          const x = i === 0 ? player.x + 14 : 90 + Math.random()*620, y = i === 0 ? player.y + 14 : 90 + Math.random()*420;
-          bossTraps.push({x: x, y: y, life: en.tmax + 45, radius: 28, warn: en.tmax});
+      function setupBossArena(en){
+        const k = en.baseType;
+        const P = (x, y) => { if(Math.hypot(x + 20 - (player.x + 14), y + 20 - (player.y + 14)) > 60) bossObs.push({x: x, y: y, w: 40, h: 40}); };
+        if(k === 'sentinela_ruinas' || k === 'lorde_acaro'){ P(210, 200); P(550, 200); P(210, 360); P(550, 360); }
+        else if(k === 'acaro' || k === 'mae_vermes'){ P(300, 140); P(460, 400); }
+      }
+      function drawBossPillar(o){
+        hbox(o.x, o.y, o.w, o.h, '#6b5a49', '#1a120d'); hbox(o.x + 4, o.y + 4, o.w - 8, 4, '#8f98a0');
+        ctx.strokeStyle = '#1a120d'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(o.x + 12, o.y + 14); ctx.lineTo(o.x + 20, o.y + 24); ctx.lineTo(o.x + 15, o.y + 36); ctx.stroke();
+      }
+      function spawnZones(en){
+        const rain = en.kind === 'rain', n = rain ? 3 + en.phase : 4 + en.phase;
+        for(let i = 0; i < n && bossTraps.length < 40; i++){
+          const near = i === 0 || (!rain && i < 2);
+          const x = near ? player.x + 14 + (Math.random() - 0.5)*30 : 90 + Math.random()*620, y = near ? player.y + 14 + (Math.random() - 0.5)*30 : 90 + Math.random()*420;
+          bossTraps.push({x: x, y: y, life: en.tmax + (rain ? 45 : 260), radius: rain ? 28 : 24, warn: en.tmax});
         }
       }
+      function startStep(en, cx, cy){
+        if(!en.combo || en.step >= en.combo.length){
+          const list = (BOSS_SCRIPTS[en.baseType] || BOSS_SCRIPTS.tufo)[en.phase];
+          let pick; do { pick = Math.floor(Math.random()*list.length); } while(list.length > 1 && pick === en.lastCombo);
+          en.lastCombo = pick; en.combo = list[pick]; en.step = 0;
+        }
+        const kd = en.kind = en.combo[en.step++];
+        en.state = 'tele';
+        en.tmax = en.st = Math.max(28, Math.round((BOSS_TELE[kd] || 50)*[1, 1, 0.85, 0.72][en.phase]));
+        en.tx = player.x + 14; en.ty = player.y + 14;
+        if(kd === 'rain' || kd === 'mold') spawnZones(en);
+        if(kd === 'wall'){ en.wv = (en.ai++ % 2 === 0); en.gx = en.tx; en.gy = en.ty; }
+        if(kd === 'egg' || kd === 'totem'){
+          const t = Math.random()*Math.PI*2;
+          en.sp = [0, 1].map(i => [Math.max(90, Math.min(710, cx + Math.cos(t + i*Math.PI)*110)), Math.max(90, Math.min(510, cy + Math.sin(t + i*Math.PI)*110))]);
+        }
+        if(kd === 'beam'){
+          const a0 = Math.atan2(en.ty - cy, en.tx - cx), sp = (0.012 + 0.004*en.phase)*(Math.random() < 0.5 ? 1 : -1);
+          beams.push({a: a0, spin: sp, warn: en.tmax, life: en.tmax + 130});
+          if(en.phase === 3) beams.push({a: a0 + Math.PI, spin: sp, warn: en.tmax, life: en.tmax + 130});
+        }
+      }
+      function endStep(en){
+        if(en.step < en.combo.length){ en.state = 'gap'; en.st = 14; return; }
+        en.state = 'recover'; en.st = [0, 80, 64, 50][en.phase]; en.stun = en.st; en.combo = null;
+      }
       function updateBoss(en, cx, cy, dxp, dyp, speed){
+        if(!en.arena){ en.arena = 1; setupBossArena(en); }
         if(!en.state){ en.state = 'chase'; en.st = 80; en.phase = 1; en.ai = 0; en.stun = 0; }
         const ratio = en.hp/en.maxHp, ph = ratio > 0.66 ? 1 : (ratio > 0.33 ? 2 : 3);
         if(ph > en.phase){
-          en.phase = ph; en.state = 'roar'; en.st = 50; enemyBullets.length = 0;
+          en.phase = ph; en.state = 'roar'; en.st = 50; en.combo = null; enemyBullets.length = 0; beams.length = 0;
           waves.push({x: cx, y: cy, r: 10, max: 150, life: 30}); shakeTime = 14;
+          if(bossObs.length > 1){ const o = bossObs.splice(Math.floor(Math.random()*bossObs.length), 1)[0]; createParticles(o.x + 20, o.y + 20, '#8f98a0', 10, 4); }
           showNotification(bossTypesMap[en.baseType].name + ': FASE ' + ph);
         }
         if(en.stun > 0) en.stun--;
         en.st--;
+        if(en.state !== 'tele' && en.state !== 'act' && beams.length) beams.length = 0;
         const ang = Math.atan2(dyp, dxp);
-        if(en.state === 'chase'){
-          const sp = speed*(0.75 + 0.15*en.phase);
-          en.x += Math.cos(ang)*sp; en.y += Math.sin(ang)*sp;
-          if(en.st <= 0){
-            const kit = BOSS_KITS[en.baseType] || ['slam'];
-            en.kind = kit[en.ai++ % kit.length];
-            en.state = 'tele'; en.tmax = en.st = [0, 55, 42, 32][en.phase];
-            en.tx = player.x + 14; en.ty = player.y + 14;
-            if(en.kind === 'rain') spawnRainZones(en);
+        switch(en.state){
+          case 'chase': {
+            const sp = speed*(0.7 + 0.12*en.phase);
+            en.x += Math.cos(ang)*sp; en.y += Math.sin(ang)*sp;
+            if(en.st <= 0) startStep(en, cx, cy);
+            break;
           }
-        } else if(en.state === 'tele'){
-          if(en.kind !== 'charge'){ en.tx = player.x + 14; en.ty = player.y + 14; }
-          if(en.st % 10 < 4) en.flash = 2;
-          if(en.st <= 0) bossAttack(en, cx, cy);
-        } else if(en.state === 'dash'){
-          en.x += Math.cos(en.dir)*11; en.y += Math.sin(en.dir)*11;
-          if(en.st <= 0) bossRecover(en);
-        } else if(en.state === 'recover'){
-          if(en.st <= 0){ en.state = 'chase'; en.st = [0, 110, 80, 55][en.phase]; }
-        } else if(en.state === 'roar'){
-          if(en.st <= 0){ en.state = 'chase'; en.st = 40; }
+          case 'tele':
+            if(['fang', 'fan', 'dust', 'spore', 'slam'].indexOf(en.kind) >= 0){ en.tx = player.x + 14; en.ty = player.y + 14; }
+            if(en.st % 10 < 4) en.flash = 2;
+            if(en.st <= 0) bossAttack(en, cx, cy);
+            break;
+          case 'dash': {
+            en.x += Math.cos(en.dir)*11; en.y += Math.sin(en.dir)*11;
+            if(en.st % 3 === 0 && bossTraps.length < 40) bossTraps.push({x: cx, y: cy, life: 80, radius: 14, warn: 0});
+            const hit = bossObs.find(o => cx > o.x - 30 && cx < o.x + o.w + 30 && cy > o.y - 30 && cy < o.y + o.h + 30);
+            if(hit){
+              en.state = 'recover'; en.st = 100; en.stun = 100; en.combo = null; shakeTime = 18;
+              waves.push({x: cx, y: cy, r: 8, max: 90, life: 20}); createParticles(cx, cy, '#8f98a0', 12, 4);
+              showNotification('O CHEFE BATEU NO PILAR!');
+              break;
+            }
+            if(en.st <= 0) endStep(en);
+            break;
+          }
+          case 'act': if(en.st <= 0) endStep(en); break;
+          case 'gap': if(en.st <= 0) startStep(en, cx, cy); break;
+          case 'recover': if(en.st <= 0){ en.state = 'chase'; en.st = [0, 70, 50, 34][en.phase]; } break;
+          case 'roar': if(en.st <= 0){ en.state = 'chase'; en.st = 40; } break;
         }
         clampEntityToRoom(en, en.size, false);
       }
-      function bossRecover(en){
-        if(en.phase === 3 && en.ai % 2 === 1){ en.state = 'chase'; en.st = 12; return; }
-        en.state = 'recover'; en.st = [0, 70, 60, 50][en.phase]; en.stun = en.st;
-      }
       function bossAttack(en, cx, cy){
-        const a = Math.atan2(en.ty - cy, en.tx - cx), ph = en.phase;
-        const shoot = (ang, sp) => { if(enemyBullets.length < MAX_ENEMY_BULLETS + 20) enemyBullets.push({x: cx, y: cy, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp}); };
-        if(en.kind === 'charge'){ en.dir = a; en.state = 'dash'; en.st = 20 + ph*2; return; }
-        if(en.kind === 'slam'){
+        const a = Math.atan2(en.ty - cy, en.tx - cx), ph = en.phase, k = en.kind;
+        const shoot = (ang, sp, extra) => {
+          if(enemyBullets.length >= MAX_ENEMY_BULLETS + 30) return;
+          const b = {x: cx, y: cy, vx: Math.cos(ang)*sp, vy: Math.sin(ang)*sp};
+          if(extra) Object.assign(b, extra);
+          enemyBullets.push(b);
+        };
+        if(k === 'charge'){ en.dir = a; en.state = 'dash'; en.st = 20 + ph*2; return; }
+        if(k === 'beam'){ en.state = 'act'; en.st = 130; return; }
+        if(k === 'slam'){
           const r = 90 + 20*ph;
           if(Math.hypot(player.x + 14 - cx, player.y + 14 - cy) < r && !player.invincible){
             hurtPlayer(1); player.invincible = true; setTimeout(() => player.invincible = false, 800); updateUI();
@@ -5221,17 +5305,81 @@
           }
           waves.push({x: cx, y: cy, r: 10, max: r, life: 26}); shakeTime = 12;
           const n = 6 + ph*2; for(let i = 0; i < n; i++) shoot(i*Math.PI*2/n, 3.6);
-        } else if(en.kind === 'fan'){
-          const n = 3 + ph*2; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.28, 4.6);
-        } else if(en.kind === 'spiral' || en.kind === 'ring'){
+        } else if(k === 'fang'){ const n = 5 + ph; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.2, 5.4);
+        } else if(k === 'fan'){ const n = 3 + ph*2; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.28, 4.6);
+        } else if(k === 'dust'){ const n = 1 + ph; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.45, 1.9, {big: true});
+        } else if(k === 'spore'){ const n = 2 + ph; for(let i = 0; i < n; i++) shoot(a + (i - (n - 1)/2)*0.5, 3.4, {explosive: true, fuse: 55});
+        } else if(k === 'spiral' || k === 'ring'){
           const n = 14, gap = Math.floor(Math.random()*n);
-          for(let i = 0; i < n; i++){ if(i === gap || i === (gap + 1) % n) continue; shoot(i*Math.PI*2/n + (en.kind === 'spiral' ? gameTime : 0), 3.8 + ph*0.4); }
-        } else if(en.kind === 'summon'){
+          for(let i = 0; i < n; i++){ if(i === gap || i === (gap + 1) % n) continue; shoot(i*Math.PI*2/n + (k === 'spiral' ? gameTime : 0), 3.8 + ph*0.4); }
+          if(k === 'ring' && ph >= 2) for(let i = 0; i < n; i++){ if(i === (gap + 7) % n || i === (gap + 8) % n) continue; shoot((i + 0.5)*Math.PI*2/n, 2.6); }
+        } else if(k === 'wall'){
+          for(let p = 70; p <= 730; p += 34){
+            if(en.wv){ if(Math.abs(p - en.gx) < 52) continue; enemyBullets.push({x: p, y: 62, vx: 0, vy: 3 + 0.3*ph}); }
+            else if(p <= 530){ if(Math.abs(p - en.gy) < 52) continue; enemyBullets.push({x: 62, y: p, vx: 3 + 0.3*ph, vy: 0}); }
+          }
+        } else if(k === 'summon'){
           const t = BOSS_MINION[en.baseType] || 'larva_negra';
           for(let i = 0; i < 1 + ph && enemies.length < MAX_ENEMIES; i++){ const g = Math.random()*Math.PI*2; spawnEnemy(cx + Math.cos(g)*70, cy + Math.sin(g)*70, t, false); }
+        } else if(k === 'totem'){
+          (en.sp || []).forEach(p => { if(enemies.filter(e => e.type === 'acolito_poeira').length < 3 && enemies.length < MAX_ENEMIES) spawnEnemy(p[0], p[1], 'acolito_poeira', false); });
+        } else if(k === 'egg'){
+          (en.sp || []).forEach(p => {
+            if(enemies.filter(e => e.type === 'ninho_vivo').length < 4 && enemies.length < MAX_ENEMIES){
+              spawnEnemy(p[0], p[1], 'ninho_vivo', false);
+              const n = enemies[enemies.length - 1]; if(n && n.type === 'ninho_vivo'){ n.hp = 40; n.maxHp = 40; }
+            }
+          });
         }
         playEnemyShotSfx();
-        bossRecover(en);
+        endStep(en);
+      }
+      function updateBossSystem(){
+        const boss = enemies.find(e => e.isBoss);
+        if(!boss){ if(bossObs.length) bossObs.length = 0; if(beams.length) beams.length = 0; return; }
+        for(let i = enemyBullets.length - 1; i >= 0; i--){
+          const b = enemyBullets[i];
+          if(b.fuse !== undefined){
+            b.fuse--;
+            if(b.fuse <= 0){
+              for(let k = 0; k < 6; k++){ const a = k*Math.PI/3 + gameTime; enemyBullets.push({x: b.x, y: b.y, vx: Math.cos(a)*3, vy: Math.sin(a)*3}); }
+              createParticles(b.x, b.y, '#c64236', 6, 3); enemyBullets.splice(i, 1); continue;
+            }
+          }
+          for(const o of bossObs) if(b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h){ enemyBullets.splice(i, 1); break; }
+        }
+        const bx = boss.x + boss.size/2, by = boss.y + boss.size/2;
+        for(let i = beams.length - 1; i >= 0; i--){
+          const bm = beams[i]; bm.life--;
+          if(bm.warn > 0) bm.warn--; else {
+            bm.a += bm.spin;
+            if(!player.invincible){
+              const px = player.x + 14 - bx, py = player.y + 14 - by;
+              const t = Math.max(0, Math.min(560, px*Math.cos(bm.a) + py*Math.sin(bm.a)));
+              if(Math.hypot(px - Math.cos(bm.a)*t, py - Math.sin(bm.a)*t) < 13){
+                hurtPlayer(1); player.invincible = true; setTimeout(() => player.invincible = false, 700); shakeTime = 8; updateUI();
+                if(player.hp <= 0) onPlayerDeath();
+              }
+            }
+          }
+          if(bm.life <= 0) beams.splice(i, 1);
+        }
+        if(boss.baseType === 'bispo_filtro'){
+          const n = enemies.filter(e => e.type === 'acolito_poeira').length;
+          if(n && boss.hp < boss.maxHp){ boss.hp = Math.min(boss.maxHp, boss.hp + 0.3*n); if(frameCount % 12 === 0) createParticles(bx, by, '#7ddc6f', 1, 2); }
+        }
+      }
+      function drawBeams(){
+        const boss = enemies.find(e => e.isBoss);
+        if(!boss) return;
+        const cx = boss.x + boss.size/2, cy = boss.y + boss.size/2;
+        for(const bm of beams){
+          ctx.save();
+          ctx.strokeStyle = bm.warn > 0 ? 'rgba(255,90,70,' + (0.4 + 0.4*Math.sin(gameTime*30)) + ')' : '#ff5a46'; ctx.lineWidth = bm.warn > 0 ? 2 : 10;
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(bm.a)*560, cy + Math.sin(bm.a)*560); ctx.stroke();
+          if(bm.warn <= 0){ ctx.strokeStyle = '#f8f0d8'; ctx.lineWidth = 3; ctx.stroke(); }
+          ctx.restore();
+        }
       }
       function drawBossTelegraph(en){
         if(!en.isBoss) return;
@@ -5241,14 +5389,30 @@
           ctx.strokeStyle = 'rgba(217,182,80,' + (0.5 + 0.3*Math.sin(gameTime*12)) + ')'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
           ctx.beginPath(); ctx.arc(cx, cy, en.size*0.62, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
         }
+        if(en.baseType === 'bispo_filtro') for(const o of enemies) if(o.type === 'acolito_poeira'){
+          ctx.strokeStyle = 'rgba(125,220,111,.6)'; ctx.lineWidth = 2; ctx.setLineDash([4, 6]);
+          ctx.beginPath(); ctx.moveTo(o.x + o.size/2, o.y + o.size/2); ctx.lineTo(cx, cy); ctx.stroke(); ctx.setLineDash([]);
+        }
         if(en.state === 'tele'){
-          const k = 1 - en.st/en.tmax, a = Math.atan2(en.ty - cy, en.tx - cx);
+          const k = 1 - en.st/en.tmax, a = Math.atan2(en.ty - cy, en.tx - cx), kd = en.kind, ph = en.phase;
           ctx.strokeStyle = 'rgba(255,90,70,' + (0.35 + 0.5*k) + ')'; ctx.fillStyle = 'rgba(255,90,70,' + (0.10 + 0.20*k) + ')'; ctx.lineWidth = 3;
-          if(en.kind === 'charge'){ ctx.lineWidth = 26; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a)*700, cy + Math.sin(a)*700); ctx.stroke(); }
-          else if(en.kind === 'slam'){ const r = 90 + 20*en.phase; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, r*k, 0, Math.PI*2); ctx.fill(); }
-          else if(en.kind === 'fan'){ const h = (3 + en.phase*2 - 1)/2*0.28; for(const s of [-h, h]){ ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a + s)*420, cy + Math.sin(a + s)*420); ctx.stroke(); } }
-          else if(en.kind === 'spiral' || en.kind === 'ring'){ ctx.beginPath(); ctx.arc(cx, cy, en.size*0.6 + 30*k, 0, Math.PI*2); ctx.stroke(); }
-          else if(en.kind === 'summon'){ for(let i = 0; i < 6; i++){ const g = i*Math.PI/3 + gameTime*2; ctx.fillRect(cx + Math.cos(g)*70 - 4, cy + Math.sin(g)*70 - 4, 8, 8); } }
+          if(kd === 'charge'){ ctx.lineWidth = 26; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a)*700, cy + Math.sin(a)*700); ctx.stroke(); }
+          else if(kd === 'slam'){ const r = 90 + 20*ph; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, r*k, 0, Math.PI*2); ctx.fill(); }
+          else if(kd === 'fang' || kd === 'fan'){
+            const h = kd === 'fang' ? (5 + ph - 1)/2*0.2 : (3 + ph*2 - 1)/2*0.28;
+            for(const s of [-h, h]){ ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a + s)*420, cy + Math.sin(a + s)*420); ctx.stroke(); }
+          }
+          else if(kd === 'dust'){ for(let i = 0; i < 1 + ph; i++){ const s = a + (i - ph/2)*0.45; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(s)*150, cy + Math.sin(s)*150); ctx.stroke(); } }
+          else if(kd === 'spore'){ ctx.beginPath(); ctx.arc(cx, cy, 16 + 30*k, 0, Math.PI*2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a)*120, cy + Math.sin(a)*120); ctx.stroke(); }
+          else if(kd === 'spiral' || kd === 'ring'){ ctx.beginPath(); ctx.arc(cx, cy, en.size*0.6 + 30*k, 0, Math.PI*2); ctx.stroke(); }
+          else if(kd === 'summon'){ for(let i = 0; i < 6; i++){ const g = i*Math.PI/3 + gameTime*2; ctx.fillRect(cx + Math.cos(g)*70 - 4, cy + Math.sin(g)*70 - 4, 8, 8); } }
+          else if(kd === 'egg' || kd === 'totem'){ for(const p of (en.sp || [])){ ctx.beginPath(); ctx.arc(p[0], p[1], 10 + 16*k, 0, Math.PI*2); ctx.stroke(); } }
+          else if(kd === 'wall'){
+            ctx.lineWidth = 8; ctx.beginPath();
+            if(en.wv){ ctx.moveTo(60, 60); ctx.lineTo(en.gx - 52, 60); ctx.moveTo(en.gx + 52, 60); ctx.lineTo(740, 60); }
+            else { ctx.moveTo(60, 60); ctx.lineTo(60, en.gy - 52); ctx.moveTo(60, en.gy + 52); ctx.lineTo(60, 540); }
+            ctx.stroke();
+          }
         }
         ctx.restore();
       }
@@ -5559,26 +5723,214 @@
         try { m = localStorage.getItem(THEME_KEY) || 'claro'; } catch(e){}
         setPixelMode(m);
       }
+      const PX_BASE = ['#10101a','#1c1c2c','#2c2438','#3c3048','#503c3c','#684830','#785028','#905830','#a87040','#c09058','#d8b888','#e8d8b0','#284828','#386838','#487838','#68a050','#88c070','#b0d890','#703020','#983828','#c05040','#e07860','#304868','#4868a0','#5890c8','#88c0e8','#c8e4f4','#c89830','#f0d060','#f8f0c8','#686878','#9898a8','#d0d0d8','#f8f8f8','#503068','#8050a0','#b890d8','#8a3a50'].map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+      const PX_OUT = {claro: PX_BASE, escuro: PX_BASE.map(c => [Math.round(c[0]*0.5), Math.round(c[1]*0.56), Math.round(c[2]*0.8)])};
+      let pxIdx = null;
+      function buildPxLut(){
+        pxIdx = new Uint8Array(32768);
+        for(let i = 0; i < 32768; i++){
+          const r = ((i >> 10) & 31)*8 + 4, g = ((i >> 5) & 31)*8 + 4, b = (i & 31)*8 + 4;
+          let best = 0, bd = 1e9;
+          for(let k = 0; k < PX_BASE.length; k++){ const p = PX_BASE[k], dr = r - p[0], dg = g - p[1], db = b - p[2], d = 2*dr*dr + 4*dg*dg + 3*db*db; if(d < bd){ bd = d; best = k; } }
+          pxIdx[i] = best;
+        }
+      }
       function applyPixelStyle(){
         if(pixelMode === 'off') return;
-        const W = 800, H = 600, pal = PX_PAL[pixelMode];
+        if(!pxIdx) buildPxLut();
+        const W = 800, H = 600, out = PX_OUT[pixelMode], gain = pixelMode === 'claro' ? 1.3 : 1.15;
         const img = ctx.getImageData(0, 0, W, H), d = img.data;
         for(let y = 0; y < H; y += 2){
-          const row = ((y >> 1) & 3)*4;
           for(let x = 0; x < W; x += 2){
             const i = (y*W + x)*4;
-            const r0 = d[i], g0 = d[i+1], b0 = d[i+2];
-            const v = r0 > g0 ? (r0 > b0 ? r0 : b0) : (g0 > b0 ? g0 : b0);
-            let k = Math.floor(pxLut[v] + 0.5 + ((BAYER4[row + ((x >> 1) & 3)] + 0.5)/16 - 0.5)*0.7);
-            k = k < 0 ? 0 : (k > 3 ? 3 : k);
-            const c = pal[k], r = c[0], g = c[1], b = c[2], j = i + W*4;
-            d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
-            d[i+4] = r; d[i+5] = g; d[i+6] = b; d[i+7] = 255;
-            d[j] = r; d[j+1] = g; d[j+2] = b; d[j+3] = 255;
-            d[j+4] = r; d[j+5] = g; d[j+6] = b; d[j+7] = 255;
+            let r = d[i]*gain, g = d[i + 1]*gain, b = d[i + 2]*gain;
+            if(r > 255) r = 255; if(g > 255) g = 255; if(b > 255) b = 255;
+            const c = out[pxIdx[((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3)]], cr = c[0], cg = c[1], cb = c[2], j = i + W*4;
+            d[i] = cr; d[i + 1] = cg; d[i + 2] = cb; d[i + 3] = 255; d[i + 4] = cr; d[i + 5] = cg; d[i + 6] = cb; d[i + 7] = 255;
+            d[j] = cr; d[j + 1] = cg; d[j + 2] = cb; d[j + 3] = 255; d[j + 4] = cr; d[j + 5] = cg; d[j + 6] = cb; d[j + 7] = 255;
           }
         }
         ctx.putImageData(img, 0, 0);
+      }
+      function drawEnemyAid(en){
+        const cx = en.x + en.size/2, cy = en.y + en.size/2, r = en.size*0.62;
+        ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.beginPath(); ctx.ellipse(cx, cy + en.size*0.42, r*0.9, r*0.32, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,236,190,.16)'; ctx.beginPath(); ctx.ellipse(cx, cy + en.size*0.1, r*1.05, r*0.85, 0, 0, Math.PI*2); ctx.fill();
+      }
+      function fb(x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+      function fcirc(x, y, r, c){ ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); }
+      function fWin(x, y){ fb(x, y, 12, 10, '#88c0e8'); fb(x, y + 7, 12, 3, '#5890c8'); fb(x + 2, y + 2, 4, 3, '#c8e4f4'); }
+      function fDoor(x, y, w, h){ fb(x, y, w, h, '#8a5a30'); fb(x + 2, y + 2, w - 4, h - 2, '#a87040'); fb(x + w - 6, y + h/2, 2, 2, '#f0d060'); fb(x - 3, y + h, w + 6, 3, '#b8a888'); }
+      function fHouse(x, y, w, h, roofH, c){
+        fb(x + 6, y + h - 2, w, 8, 'rgba(0,0,0,.22)');
+        fb(x, y + roofH, w, h - roofH, c.wall); fb(x, y + h - 8, w, 8, c.base);
+        fb(x, y, w, roofH, c.roof);
+        for(let i = 5; i < roofH - 2; i += 8) fb(x, y + i, w, 3, c.roofLo);
+        fb(x, y, w, 4, c.roofHi); fb(x - 4, y + roofH - 3, w + 8, 6, c.roofLo);
+      }
+      function fTree(x, y){ fb(x - 3, y - 8, 6, 10, '#785028'); fcirc(x, y - 18, 14, '#487838'); fcirc(x - 4, y - 22, 8, '#68a050'); }
+      function fLamp(x, y){
+        const f = 1 + Math.sin(gameTime*3 + x)*0.08;
+        ctx.fillStyle = 'rgba(248,224,120,.12)'; ctx.beginPath(); ctx.arc(x, y - 34, 36*f, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(248,224,120,.16)'; ctx.beginPath(); ctx.arc(x, y - 34, 20*f, 0, Math.PI*2); ctx.fill();
+        fb(x - 2, y - 30, 4, 30, '#483828'); fb(x - 6, y - 42, 12, 12, '#f0d060'); fb(x - 3, y - 39, 6, 6, '#fff8d8');
+      }
+      function fFence(x, y, n){ fb(x, y + 5, n*8, 3, '#c8b888'); for(let i = 0; i < n; i++) fb(x + i*8 + 1, y, 5, 12, '#e0d0a8'); }
+      function drawHubProps(){
+        fLamp(312, 354); fLamp(488, 354); fLamp(172, 236);
+        fb(146, 236, 20, 16, '#a87040'); fb(146, 236, 20, 4, '#c09058'); fb(149, 232, 5, 4, '#c05040'); fb(155, 232, 5, 4, '#f0d060');
+        fb(164, 396, 40, 38, '#7a5a38');
+        for(let r = 0; r < 3; r++) for(let c = 0; c < 4; c++){ fb(169 + c*9, 402 + r*10, 4, 6, '#488838'); if((r + c) % 2) fb(170 + c*9, 400 + r*10, 2, 2, '#e07860'); }
+        fFence(164, 390, 5); fFence(164, 434, 5);
+        fb(132, 440, 34, 4, '#a87040'); fb(132, 446, 34, 5, '#905830'); fb(135, 451, 4, 4, '#684830'); fb(159, 451, 4, 4, '#684830');
+        fb(648, 242, 36, 8, '#905830'); fb(650, 250, 4, 6, '#684830'); fb(678, 250, 4, 6, '#684830'); fb(654, 238, 6, 4, '#9898a8'); fb(668, 236, 3, 6, '#785028');
+        fb(724, 246, 16, 5, '#484858'); fb(729, 251, 6, 5, '#484858');
+        fb(640, 436, 24, 20, '#a87040'); fb(640, 436, 24, 4, '#c09058'); fb(646, 444, 12, 2, '#905830');
+        fb(700, 438, 16, 18, '#905830'); fb(700, 442, 16, 3, '#684830'); fb(700, 450, 16, 3, '#684830');
+        fb(690, 466, 40, 12, '#905830'); fcirc(698, 482, 5, '#503c3c'); fcirc(722, 482, 5, '#503c3c');
+        fb(294, 236, 24, 8, '#9898a8'); fb(300, 216, 12, 20, '#b0b0bc'); fb(302, 210, 8, 7, '#b0b0bc'); fb(312, 222, 10, 4, '#686878'); fb(305, 218, 2, 14, '#686878');
+        fb(500, 226, 22, 10, '#686878'); fb(496, 230, 6, 6, '#2c2438'); fb(508, 227, 4, 3, '#905830');
+        fb(441, 232, 3, 12, '#785028'); fb(436, 224, 14, 9, '#a87040'); fb(442, 226, 2, 5, '#f8f0d0');
+        fTree(243, 512); fTree(563, 512);
+        for(let x = 10; x < 800; x += 38){ if(x > 330 && x < 470) continue; fTree(x, 70); }
+        for(let y = 120; y < 570; y += 40){ if(y < 350 || y > 450) fTree(14, y); if(y < 360 || y > 450) fTree(786, y); }
+      }
+      let hubInterior = null, hubFade = 0, intTarget = null;
+      const HOUSES = {
+        obs: {name: 'OBSERVATÓRIO', door: {x: 135, y: 244}, tint: 'rgba(80,110,200,.10)', npcName: 'VELHO SABIO', npc: {k: 'sage', x: 440, y: 330},
+          lines: ['Poucos entram aqui. As marcas vermelhas nos mapas são lugares onde a poeira já venceu.', 'Pelo telescópio, vejo as ruínas piscarem à noite. É a Poeira Negra respirando.'],
+          items: [
+            {x: 192, y: 164, w: 64, h: 36, c: '#785028', t: '#a87040', look: 'Estantes de livros sobre os Guardiões e a Poeira.'},
+            {x: 272, y: 164, w: 64, h: 36, c: '#785028', t: '#a87040', look: 'Um livro aberto: "A poeira lembra de quem a varreu."'},
+            {x: 352, y: 164, w: 64, h: 36, c: '#785028', t: '#a87040', look: 'Entre os livros há uma gaveta emperrada...', secret: 'house_obs', reward: 12},
+            {x: 520, y: 190, w: 36, h: 60, c: '#586878', t: '#8098b0', look: 'O telescópio aponta para as ruínas, ao norte.'},
+            {x: 290, y: 290, w: 110, h: 50, c: '#385878', t: '#5878a8', look: 'Um mapa de estrelas com marcas vermelhas.'},
+            {x: 200, y: 380, w: 40, h: 40, c: '#a05838', t: '#c07858', look: 'Um globo antigo. As ruínas foram riscadas.'},
+            {x: 560, y: 360, w: 48, h: 70, c: '#b0b8c0', t: '#d8dce0', look: 'Frascos com poeira negra coletada para estudo.'},
+            {x: 440, y: 110, w: 40, h: 36, c: '#88c0e8', t: '#c8e4f4', deco: true}
+          ]},
+        home: {name: 'CASA DA MORADORA', door: {x: 112, y: 442}, tint: 'rgba(255,200,120,.10)', npcName: 'MORADORA', npc: {k: 'v1', x: 340, y: 240},
+          lines: ['Entre, entre. A casa fica quieta demais desde que a praça esvaziou.', 'Guardo o que sobrou da minha mãe. Pode olhar, mas não mexa no baú.'],
+          items: [
+            {x: 200, y: 172, w: 80, h: 60, c: '#c05040', t: '#e07860', look: 'Uma cama arrumada com cuidado.'},
+            {x: 300, y: 300, w: 90, h: 50, c: '#a87040', t: '#c09058', look: 'A mesa está posta para duas pessoas.'},
+            {x: 520, y: 172, w: 60, h: 44, c: '#484858', t: '#686878', look: 'O fogão ainda está morno.'},
+            {x: 560, y: 380, w: 28, h: 36, c: '#488838', t: '#68a050', look: 'Uma planta teimosa que sobrevive à poeira.'},
+            {x: 210, y: 400, w: 50, h: 32, c: '#905830', t: '#b07840', look: 'O baú está destrancado... e tem algo dentro.', secret: 'house_home', reward: 10},
+            {x: 330, y: 110, w: 44, h: 36, c: '#e07860', t: '#f0a090', deco: true}
+          ]},
+        work: {name: 'OFICINA DO ARTESÃO', door: {x: 702, y: 246}, tint: 'rgba(255,170,90,.10)', npcName: 'ARTESAO', npc: {k: 'v2', x: 430, y: 300},
+          lines: ['Esse motor veio das ruínas. Pelo desenho, é irmão do seu aspirador.', 'Se achar mais peças, me avise. Já tentei remontá-lo três vezes.'],
+          items: [
+            {x: 200, y: 172, w: 120, h: 40, c: '#905830', t: '#b07840', look: 'Uma bancada cheia de ferramentas e engrenagens.'},
+            {x: 350, y: 164, w: 100, h: 36, c: '#684830', t: '#905830', look: 'Prateleiras com peças separadas por tamanho.'},
+            {x: 500, y: 320, w: 36, h: 26, c: '#484858', t: '#686878', look: 'Uma bigorna marcada por anos de martelo.'},
+            {x: 300, y: 330, w: 70, h: 40, c: '#a87040', t: '#c09058', look: 'Um motor de aspirador antigo, desmontado.'},
+            {x: 560, y: 200, w: 44, h: 30, c: '#c05040', t: '#e07860', look: 'Uma caixa de ferramentas pesada e trancada...', secret: 'house_work', reward: 15},
+            {x: 480, y: 110, w: 44, h: 36, c: '#b0b8c0', t: '#d8dce0', deco: true}
+          ]},
+        store: {name: 'LOJA DO MERCADOR', door: {x: 680, y: 442}, tint: 'rgba(120,200,140,.08)', npcName: 'MERCADOR', npc: {k: 'merchant', x: 360, y: 214},
+          lines: ['Aqui dentro eu fico de olho em tudo. Olhar não paga, mas também não rouba.', 'A loja das ruínas é de um velho amigo. Dizem que ele nunca saiu de lá.'],
+          items: [
+            {x: 260, y: 244, w: 200, h: 36, c: '#785028', t: '#a87040', look: 'O balcão está impecável. Nada fora do lugar.'},
+            {x: 200, y: 164, w: 120, h: 36, c: '#684830', t: '#905830', look: 'Frascos e pacotes organizados por cor.'},
+            {x: 400, y: 164, w: 100, h: 36, c: '#684830', t: '#905830', look: 'Rolos de tecido e cordas.'},
+            {x: 540, y: 172, w: 60, h: 40, c: '#a87040', t: '#c09058', look: 'Caixas lacradas com o selo do mercador.'},
+            {x: 540, y: 340, w: 32, h: 40, c: '#905830', t: '#b07840', look: 'Barris de óleo para as luminárias.'},
+            {x: 440, y: 232, w: 26, h: 20, c: '#f0d060', t: '#f8e898', look: 'A caixa de moedas está mal fechada...', secret: 'house_store', reward: 20},
+            {x: 250, y: 110, w: 44, h: 36, c: '#88c0e8', t: '#c8e4f4', deco: true}
+          ]}
+      };
+      function tryEnterHouse(){
+        for(const k in HOUSES){
+          if(distanceToPlayer(HOUSES[k].door.x, HOUSES[k].door.y) < 30){
+            hubInterior = {id: k, ret: {x: player.x, y: player.y}};
+            player.x = 386; player.y = 400; player.vx = 0; player.vy = 0; hubFade = 1; intTarget = null;
+            return true;
+          }
+        }
+        return false;
+      }
+      function exitHouse(){
+        const r = hubInterior.ret; hubInterior = null; intTarget = null;
+        player.x = r.x; player.y = r.y; player.vx = 0; player.vy = 0; hubFade = 1; hubMessageCooldown = 40;
+      }
+      function interiorTarget(h){
+        const px = player.x + 14, py = player.y + 14;
+        let best = null, bd = 1e9;
+        const dn = Math.hypot(px - h.npc.x, py - h.npc.y);
+        if(dn < 46){ best = {npc: true, x: h.npc.x, y: h.npc.y - 34}; bd = dn; }
+        for(const o of h.items){
+          if(!o.look) continue;
+          const dx = Math.max(o.x - px, 0, px - (o.x + o.w)), dy = Math.max(o.y - py, 0, py - (o.y + o.h)), d = Math.hypot(dx, dy);
+          if(d < 26 && d < bd){ best = {item: o, x: o.x + o.w/2, y: o.y - 8}; bd = d; }
+        }
+        return best;
+      }
+      function updateInterior(){
+        frameCount++; gameTime += 0.05;
+        if(hubMessageCooldown > 0) hubMessageCooldown--;
+        if(hubFade > 0) hubFade = Math.max(0, hubFade - 0.06);
+        if(dialogueState.active){ updateDialogueBox(); return; }
+        const h = HOUSES[hubInterior.id];
+        player.isMoving = keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'];
+        player.walkCycle = player.isMoving ? player.walkCycle + 0.25 : player.walkCycle*0.8;
+        let mx = 0, my = 0;
+        if(keys['KeyW']) my -= player.speed; if(keys['KeyS']) my += player.speed;
+        if(keys['KeyA']) mx -= player.speed; if(keys['KeyD']) mx += player.speed;
+        if(mx && my){ mx *= 0.7071; my *= 0.7071; }
+        const solids = h.items.filter(o => !o.deco).concat([{x: h.npc.x - 14, y: h.npc.y - 12, w: 28, h: 30}]);
+        const nx = player.x + mx, ny = player.y + my;
+        if(!checkCollision(nx, player.y, player.size, solids)) player.x = nx;
+        if(!checkCollision(player.x, ny, player.size, solids)) player.y = ny;
+        player.x = Math.max(176, Math.min(624 - player.size, player.x)); player.y = Math.max(164, Math.min(484 - player.size, player.y));
+        if(player.y + 14 > 466 && player.x + 14 > 376 && player.x + 14 < 424){ exitHouse(); return; }
+        intTarget = interiorTarget(h);
+        if(keys['KeyF'] && hubMessageCooldown <= 0 && intTarget){
+          hubMessageCooldown = 40; keys['KeyF'] = false;
+          if(intTarget.npc) startDialogue(h.npcName, h.lines);
+          else {
+            const o = intTarget.item;
+            if(o.secret && !guardianDialogueSeen[o.secret]){
+              guardianDialogueSeen[o.secret] = true; collectDust(o.reward);
+              addFloatingText('+' + o.reward + ' PÓ', o.x + o.w/2, o.y - 6, '#f0d060'); showNotification('VOCÊ ENCONTROU UM SEGREDO!'); saveGame();
+            } else showNotification(o.secret ? 'Não há mais nada aqui.' : o.look);
+          }
+        }
+        updateUI();
+      }
+      function drawInterior(){
+        const h = HOUSES[hubInterior.id];
+        ctx.clearRect(0, 0, 800, 600);
+        fb(0, 0, 800, 600, '#10101a');
+        for(let y = 164; y < 484; y += 32) for(let x = 176; x < 624; x += 32) fb(x, y, 32, 32, ((x + y)/32) % 2 ? '#c8a878' : '#bf9d6e');
+        fb(160, 100, 480, 56, '#e0d0b0'); fb(160, 156, 480, 8, '#a88860');
+        fb(160, 164, 16, 336, '#d8c8a8'); fb(624, 164, 16, 336, '#d8c8a8'); fb(160, 484, 216, 16, '#d8c8a8'); fb(424, 484, 216, 16, '#d8c8a8');
+        fb(376, 484, 48, 16, '#a05838'); fb(376, 458, 48, 26, '#c05040'); fb(380, 462, 40, 18, '#d87060');
+        for(const o of h.items){
+          if(!o.deco) fb(o.x + 4, o.y + o.h - 2, o.w, 6, 'rgba(0,0,0,.18)');
+          fb(o.x, o.y, o.w, o.h, o.c); fb(o.x, o.y, o.w, Math.min(8, Math.floor(o.h/3)), o.t);
+        }
+        const k = h.npc.k, nx = h.npc.x, ny = h.npc.y;
+        ctx.save();
+        if(k === 'sage') drawSage(nx, ny); else if(k === 'merchant') drawHubMerchant(nx, ny); else drawHubVillager(nx, ny, '', k === 'v1' ? 1 : 2);
+        ctx.restore();
+        drawPlayerArt();
+        ctx.fillStyle = h.tint; ctx.fillRect(160, 100, 480, 400);
+        ctx.fillStyle = 'rgba(255,230,160,.10)'; ctx.beginPath(); ctx.arc(400, 300, 190, 0, Math.PI*2); ctx.fill();
+        const t = intTarget;
+        fadePrompt('int', t && t.npc ? 'APERTE F PARA FALAR' : 'APERTE F PARA EXAMINAR', t ? t.x : 400, t ? t.y : 300, !!t && !dialogueState.active);
+        drawFloatingTexts();
+        if(hubFade > 0){ ctx.fillStyle = 'rgba(0,0,0,' + hubFade + ')'; ctx.fillRect(0, 0, 800, 600); }
+        updateDialogueBox();
+      }
+      function drawDoorPrompts(){
+        let shown = false;
+        for(const k in HOUSES){
+          const d = HOUSES[k].door, near = !shown && !dialogueState.active && distanceToPlayer(d.x, d.y) < 30;
+          if(near) shown = true;
+          fadePrompt('door' + k, 'APERTE F PARA ENTRAR', d.x, d.y - 34, near);
+        }
       }
       function updateBuildCounter() { document.getElementById('build-counter').innerHTML = `BÊNÇÃOS: ${equippedItems.length}/${MAX_EQUIPPED}`; }
 
@@ -5596,7 +5948,7 @@
           dustCount, roomsExplored, blackDustLevel, blackDustRoomData, blackDustSpawnTimer, blackDustLastMilestone, bossDefeatedNoticeShown, storyRelics,
           hasSacredVacuum, foundSacredRelics, installedSacredRelics,
           inventory, equippedItems,
-          player: {...player},
+          player: hubInterior ? {...player, x: hubInterior.ret.x, y: hubInterior.ret.y} : {...player},
           enemies, bullets, enemyBullets, items, powerUpItems, bossTraps,
           shopItems, shootingMode
         };
