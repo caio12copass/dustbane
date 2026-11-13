@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Dustbane v17</title>
+  <title>Dustbane v18</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -1062,7 +1062,7 @@
       <div class="board-strip"></div>
       <div class="menu-paper mission-paper">
         <div class="paper-tag">ORDEM DE SERVIÇO 01</div>
-        <h1>DUST<br>BANE</h1><div class="menu-small">versão 17</div>
+        <h1>DUST<br>BANE</h1><div class="menu-small">versão 18</div>
         <p class="paper-copy">A Poeira Negra voltou depois de eras. O último escolhido precisa atravessar a cidade antiga, recuperar as relíquias dos Guardiões e encontrar o Aspirador Sagrado antes do Lorde Acaro.</p>
         <div class="menu-actions">
           <button class="btn-ui" onclick="startGame()">NOVA JORNADA</button>
@@ -1218,6 +1218,8 @@
       <button class="action-btn" id="pauseBtn">II</button>
       <button class="action-btn" id="expelBtn">X</button>
       <button class="action-btn" id="vortexBtn">C</button>
+      <button class="action-btn" id="roombaBtn">Q</button>
+      <button class="action-btn" id="journalBtn">B</button>
     </div>
   </div>
 
@@ -2543,6 +2545,10 @@
         if (expelBtn) expelBtn.addEventListener('touchstart', (e) => { e.preventDefault(); expelEnergy(); });
         const vortexBtn = document.getElementById('vortexBtn');
         if (vortexBtn) vortexBtn.addEventListener('touchstart', (e) => { e.preventDefault(); castVortex(); });
+        const roombaBtn = document.getElementById('roombaBtn');
+        if (roombaBtn) roombaBtn.addEventListener('touchstart', (e) => { e.preventDefault(); summonRoomba(); });
+        const journalBtn = document.getElementById('journalBtn');
+        if (journalBtn) journalBtn.addEventListener('touchstart', (e) => { e.preventDefault(); toggleJournal(); });
                 
   
         canvas.addEventListener('touchmove', (e) => {
@@ -4710,6 +4716,7 @@
         ctx.fillStyle = floor;
         ctx.fillRect(354,48,92,10); ctx.fillRect(354,542,92,10);
         ctx.fillRect(48,254,10,92); ctx.fillRect(742,254,10,92);
+        drawActDecor(roomData, seed);
         if(roomData.isGuardianRoom){
           ctx.save();
           const g = guardianDefs[roomData.guardianId] || guardianDefs.guardiao_motor;
@@ -6301,6 +6308,40 @@
           const k = 0.6 + 0.4*d.t/70; ctx.scale(k, k); fn(d.s, {open: true, stun: true, dash: false}, {state: 'roar'});
           ctx.restore();
           if(d.t % 5 === 0) pixelPoof(d.x + (Math.random() - 0.5)*d.s, d.y + (Math.random() - 0.5)*d.s, '#f8d860');
+        }
+      }
+      function drawActDecor(roomData, seed){
+        const act = currentAct, R = i => seededNoise(seed, 500 + i);
+        for(let row = 0; row < 3; row++) for(let x = (row % 2)*16; x < 800; x += 32){
+          if(x > 330 && x < 454) continue;
+          fb(x + 1, row*16, 30, 14, 'rgba(255,255,255,.045)'); fb(x + 1, 552 + row*16, 30, 14, 'rgba(255,255,255,.045)');
+        }
+        for(let col = 0; col < 3; col++) for(let y = (col % 2)*16 + 48; y < 552; y += 32){
+          if(y > 230 && y < 354) continue;
+          fb(col*16 + 1, y + 1, 14, 30, 'rgba(255,255,255,.045)'); fb(752 + col*16 + 1, y + 1, 14, 30, 'rgba(255,255,255,.045)');
+        }
+        if(act === 1){
+          for(let i = 0; i < 7; i++){ const x = 90 + R(i)*600, y = 90 + R(i + 9)*420; ctx.strokeStyle = 'rgba(10,7,5,.45)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 14, y + 8); ctx.lineTo(x + 10, y + 20); ctx.lineTo(x + 26, y + 30); ctx.stroke(); }
+          for(let i = 0; i < 12; i++){ const x = 70 + R(i + 20)*660, y = 70 + R(i + 30)*460; fb(x, y, 2, 5, '#4f6a37'); fb(x + 3, y + 1, 2, 4, '#68a050'); }
+          for(let i = 0; i < 6; i++) fb(60 + R(i + 40)*260 + (i % 2)*380, 50, 14, 6, '#4f6a37');
+          for(let i = 0; i < 5; i++) fb(70 + R(i + 50)*660, 70 + R(i + 60)*460, 8, 5, '#6a6458');
+        } else if(act === 2){
+          for(let x = 112; x < 700; x += 64) for(let y = 112; y < 520; y += 64) if(((x + y)/64) % 2) fb(x, y, 62, 62, 'rgba(143,185,216,.06)');
+          for(const bx of [150, 250, 560, 650]){ fb(bx, 48, 18, 40, '#425261'); fb(bx + 5, 60, 8, 8, '#d9b650'); fb(bx, 88, 18, 4, '#d9b650'); }
+          for(const sx of [120, 680]){ fb(sx, 56, 8, 14, '#6a5a40'); fb(sx + 1, 46 + Math.round(Math.sin(gameTime*8 + sx)), 6, 10, '#f08838'); }
+        } else if(act === 3){
+          for(let i = 1; i < 5; i++){ ctx.strokeStyle = 'rgba(217,182,80,.10)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(400, 300 - i*50); ctx.lineTo(400 + i*50, 300); ctx.lineTo(400, 300 + i*50); ctx.lineTo(400 - i*50, 300); ctx.closePath(); ctx.stroke(); }
+          for(let i = 0; i < 6; i++){ const x = 90 + R(i + 70)*620, y = 90 + R(i + 80)*420; fb(x, y, 4, 8, '#e8d6aa'); fb(x, y - 4 - Math.round(Math.sin(gameTime*9 + i)), 4, 5, '#f8d860'); }
+          for(let i = 0; i < 4; i++) fb(80 + R(i + 90)*640, 80 + R(i + 95)*440, 6, 4, ['#5890c8', '#c05040', '#f0d060', '#68a050'][i]);
+        } else if(act === 4){
+          for(let i = 0; i < 8; i++){ const x = 70 + R(i + 100)*660, len = 30 + R(i + 110)*50; ctx.strokeStyle = '#4a3426'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, 48); ctx.quadraticCurveTo(x + 10 + Math.sin(gameTime + i)*3, 48 + len*0.5, x - 6, 48 + len); ctx.stroke(); }
+          for(let i = 0; i < 6; i++){ const x = 80 + R(i + 120)*640, y = 80 + R(i + 130)*440; fb(x, y + 4, 2, 5, '#d8c8a8'); fcirc(x + 1, y + 3, 4, i % 2 ? '#c05048' : '#88c070'); }
+          for(let i = 0; i < 3; i++){ ctx.fillStyle = 'rgba(88,144,200,.22)'; ctx.beginPath(); ctx.ellipse(100 + R(i + 140)*600, 100 + R(i + 150)*400, 22, 10, 0, 0, Math.PI*2); ctx.fill(); }
+          for(let i = 0; i < 4; i++){ const x = 80 + R(i + 160)*640, y = 80 + R(i + 170)*440; fb(x, y, 10, 3, '#d8c8a8'); fb(x + 2, y - 2, 3, 7, '#d8c8a8'); }
+        } else {
+          fb(360, 48, 80, 504, 'rgba(122,38,53,.5)'); fb(358, 48, 3, 504, 'rgba(217,182,80,.5)'); fb(439, 48, 3, 504, 'rgba(217,182,80,.5)');
+          for(let i = 0; i < 3; i++){ ctx.strokeStyle = 'rgba(255,90,120,' + (0.12 + 0.08*Math.sin(gameTime*3 + i)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(150 + i*250, 300 + (i % 2)*60, 36, 0, Math.PI*2); ctx.stroke(); }
+          for(const c of [[48, 48, 1, 1], [752, 48, -1, 1], [48, 552, 1, -1], [752, 552, -1, -1]]){ ctx.strokeStyle = 'rgba(232,214,170,.25)'; ctx.lineWidth = 1; for(let k = 1; k < 5; k++){ ctx.beginPath(); ctx.moveTo(c[0], c[1] + c[3]*k*14); ctx.lineTo(c[0] + c[2]*k*14, c[1]); ctx.stroke(); } }
         }
       }
       function updateBuildCounter() { document.getElementById('build-counter').innerHTML = `BÊNÇÃOS: ${equippedItems.length}/${MAX_EQUIPPED}`; }
